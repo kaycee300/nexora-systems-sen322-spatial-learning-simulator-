@@ -1,6 +1,10 @@
 from sqlalchemy.orm import Session
 
-from . import models, schemas
+try:
+    from . import models, schemas
+except ImportError:
+    import models  # type: ignore
+    import schemas  # type: ignore
 
 
 def get_scenarios(db: Session):

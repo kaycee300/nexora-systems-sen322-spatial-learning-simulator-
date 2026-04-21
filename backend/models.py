@@ -1,6 +1,10 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.sql import func
-from .database import Base
+
+try:
+    from .database import Base
+except ImportError:
+    from database import Base  # type: ignore
 
 
 class Scenario(Base):
