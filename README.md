@@ -38,6 +38,8 @@ SkillScape is designed to support a wide range of practical learning domains, in
 
 The backend will start at `http://localhost:8000` and seed sample scenarios automatically.
 
+> Make sure you run this command from the project root (`/Users/best/Desktop/skillscape`), not from inside `backend/`.
+
 ### Frontend
 
 1. `cd frontend`
