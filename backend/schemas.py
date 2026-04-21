@@ -1,4 +1,6 @@
-from pydantic import BaseModel
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict
 
 
 class ScenarioBase(BaseModel):
@@ -10,9 +12,7 @@ class ScenarioBase(BaseModel):
 
 class Scenario(ScenarioBase):
     id: int
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ProgressCreate(BaseModel):
@@ -23,10 +23,8 @@ class ProgressCreate(BaseModel):
 
 class Progress(ProgressCreate):
     id: int
-    updated_at: str
-
-    class Config:
-        orm_mode = True
+    updated_at: datetime | None = None
+    model_config = ConfigDict(from_attributes=True)
 
 
 class Message(BaseModel):

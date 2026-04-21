@@ -34,11 +34,9 @@ SkillScape is designed to support a wide range of practical learning domains, in
 2. Create a virtual environment: `python3 -m venv venv`
 3. Activate it: `source venv/bin/activate`
 4. Install requirements: `pip install -r requirements.txt`
-5. Run the backend: `uvicorn backend.main:app --reload --port 8000`
+5. Run the backend: `uvicorn main:app --reload --port 8000`
 
 The backend will start at `http://localhost:8000` and seed sample scenarios automatically.
-
-> Make sure you run this command from the project root (`/Users/best/Desktop/skillscape`), not from inside `backend/`.
 
 ### Frontend
 
