@@ -662,6 +662,41 @@ h2 {
   gap: 0.65rem;
 }
 
+.coach-meta {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.coach-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.42rem 0.72rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  font-size: 0.8rem;
+  letter-spacing: 0.01em;
+}
+
+.coach-mode::before {
+  content: "";
+  width: 0.48rem;
+  height: 0.48rem;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.75;
+}
+
+.coach-mode-live {
+  color: #8ee6c4;
+  background: rgba(74, 179, 136, 0.12);
+}
+
+.coach-mode-subtle {
+  color: var(--muted-strong);
+  background: rgba(255, 247, 240, 0.06);
+}
+
 .runtime-list {
   margin: 0;
   padding-left: 1.1rem;

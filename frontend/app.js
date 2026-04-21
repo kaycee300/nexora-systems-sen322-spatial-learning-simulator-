@@ -20,6 +20,14 @@ function setMessage(text, tone = "default", elementId = "progress-message") {
   messageEl.style.color = tone === "error" ? "#ff9d8d" : tone === "success" ? "#ffd08b" : "#efceb0";
 }
 
+function setCoachMode(provider) {
+  const pill = document.getElementById("coach-mode-pill");
+  const isLive = provider && provider.startsWith("ollama:");
+  pill.textContent = isLive ? "Local coach active" : "Guided hints";
+  pill.classList.toggle("coach-mode-live", isLive);
+  pill.classList.toggle("coach-mode-subtle", !isLive);
+}
+
 function saveCurrentUser(user) {
   currentUser = user;
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
@@ -442,6 +450,7 @@ function renderLessonRuntime(runtime) {
   const coachEl = document.getElementById("ai-coach-response");
   coachEl.textContent = runtime.completion?.feedback
     || "Ask the AI coach for feedback or submit an assessment to generate lesson feedback.";
+  setCoachMode(runtime.completion?.feedback ? "fallback" : "");
 
   if (isElectricalRuntime(runtime)) {
     simulationState = createInitialSimulationState();
@@ -941,8 +950,8 @@ async function handleAskAICoach() {
       lesson_id: currentLessonRuntime.lesson.id,
       answer,
     });
-    document.getElementById("ai-coach-response").textContent =
-      `${response.feedback} (${response.provider})`;
+    document.getElementById("ai-coach-response").textContent = response.feedback;
+    setCoachMode(response.provider);
     setMessage("AI coach feedback ready.", "success", "lesson-attempt-message");
   } catch (error) {
     setMessage(error.message, "error", "lesson-attempt-message");
@@ -973,6 +982,7 @@ async function handleSubmitLessonAttempt() {
       answer,
     });
     document.getElementById("ai-coach-response").textContent = attempt.feedback;
+    setCoachMode("fallback");
     setMessage(`Assessment scored ${attempt.score}/100.`, "success", "lesson-attempt-message");
   } catch (error) {
     setMessage(error.message, "error", "lesson-attempt-message");
