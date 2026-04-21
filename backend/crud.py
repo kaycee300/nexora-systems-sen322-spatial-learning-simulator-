@@ -2,6 +2,7 @@ import hashlib
 import hmac
 import secrets
 import re
+from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
@@ -508,6 +509,10 @@ def get_module(db: Session, module_id: int):
     return db.query(models.Module).filter(models.Module.id == module_id).first()
 
 
+def get_lesson_session(db: Session, session_id: int):
+    return db.query(models.LessonSession).filter(models.LessonSession.id == session_id).first()
+
+
 def create_user(db: Session, payload: schemas.UserCreate):
     user = models.User(
         name=payload.name.strip(),
@@ -783,6 +788,30 @@ def get_user_lesson_completions(db: Session, user_id: int):
     )
 
 
+def get_active_lesson_session(db: Session, user_id: int, lesson_id: int):
+    return (
+        db.query(models.LessonSession)
+        .filter(
+            models.LessonSession.user_id == user_id,
+            models.LessonSession.lesson_id == lesson_id,
+            models.LessonSession.status == "In progress",
+        )
+        .order_by(models.LessonSession.started_at.desc())
+        .first()
+    )
+
+
+def get_user_active_sessions(db: Session, user_id: int):
+    return (
+        db.query(models.LessonSession)
+        .filter(
+            models.LessonSession.user_id == user_id,
+            models.LessonSession.status == "In progress",
+        )
+        .all()
+    )
+
+
 def _find_skill_for_course(db: Session, course: models.Course):
     return db.query(models.SkillTrack).filter(models.SkillTrack.id == course.skill_id).first()
 
@@ -802,6 +831,7 @@ def build_lesson_runtime(db: Session, lesson: models.Lesson, user_id: int | None
     skill = _find_skill_for_course(db, course)
     scenario = _find_scenario_for_skill(db, skill.id)
     completion = get_lesson_completion(db, user_id, lesson.id) if user_id is not None else None
+    active_session = get_active_lesson_session(db, user_id, lesson.id) if user_id is not None else None
 
     checklist = [
         f"State the goal of {lesson.title.lower()} in plain language.",
@@ -827,6 +857,7 @@ def build_lesson_runtime(db: Session, lesson: models.Lesson, user_id: int | None
             f"Describe the setup, the key execution steps, and the final verification."
         ),
         completion=schemas.LessonCompletion.model_validate(completion) if completion else None,
+        active_session=schemas.LessonSession.model_validate(active_session) if active_session else None,
     )
 
 
@@ -889,6 +920,7 @@ def build_ai_coach_feedback(db: Session, lesson: models.Lesson, answer: str):
 def build_learner_dashboard(db: Session, user: models.User):
     activity = get_user_progress(db, user.id)
     lesson_completions = get_user_lesson_completions(db, user.id)
+    active_sessions = get_user_active_sessions(db, user.id)
     completed_sessions = sum(1 for item in activity if item.status == "Completed")
     in_progress_sessions = sum(1 for item in activity if item.status == "In progress")
     completed_lessons = sum(1 for item in lesson_completions if item.status == "Completed")
@@ -901,10 +933,50 @@ def build_learner_dashboard(db: Session, user: models.User):
         in_progress_sessions=in_progress_sessions,
         completed_lessons=completed_lessons,
         active_lessons=active_lessons,
+        active_simulation_sessions=len(active_sessions),
         recent_activity=[schemas.Progress.model_validate(item) for item in activity[:6]],
         recommended_skills=[schemas.SkillTrack.model_validate(item) for item in get_recommended_skills(db)],
         recommended_courses=[schemas.Course.model_validate(item) for item in get_recommended_courses(db)],
     )
+
+
+def start_lesson_session(db: Session, lesson: models.Lesson, payload: schemas.LessonSessionCreate):
+    existing = get_active_lesson_session(db, payload.user_id, lesson.id)
+    if existing is not None:
+        return existing
+
+    session = models.LessonSession(
+        user_id=payload.user_id,
+        lesson_id=lesson.id,
+        status="In progress",
+    )
+    db.add(session)
+    db.commit()
+    db.refresh(session)
+    return session
+
+
+def log_lesson_event(db: Session, session: models.LessonSession, payload: schemas.LessonEventCreate):
+    event = models.LessonEvent(
+        session_id=session.id,
+        event_type=payload.event_type,
+        event_value=payload.event_value,
+    )
+    db.add(event)
+    db.commit()
+    db.refresh(event)
+    return event
+
+
+def complete_lesson_session(db: Session, session: models.LessonSession, payload: schemas.LessonSessionUpdate):
+    session.status = payload.status
+    session.score = payload.score
+    session.notes = payload.notes
+    if payload.status == "Completed":
+        session.completed_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(session)
+    return session
 
 
 def seed_scenarios(db: Session):

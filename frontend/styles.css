@@ -605,6 +605,58 @@ h2 {
   gap: 1rem;
 }
 
+.runtime-stage {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  min-height: 300px;
+  overflow: hidden;
+  border-radius: 1.3rem;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(25, 20, 17, 0.94), rgba(16, 13, 11, 0.98));
+}
+
+#lesson-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.runtime-stage-overlay {
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+}
+
+.runtime-stage-overlay span,
+.runtime-stage-overlay strong {
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 247, 240, 0.08);
+}
+
+.simulation-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.simulation-action.is-complete {
+  background: linear-gradient(135deg, var(--amber), #ffb35c);
+  color: #25170f;
+  border-color: transparent;
+}
+
+.lesson-card {
+  text-align: left;
+  color: var(--text);
+  cursor: pointer;
+}
+
 .runtime-block {
   display: grid;
   gap: 0.65rem;
@@ -798,6 +850,7 @@ h2 {
   .scenario-layout,
   .auth-layout,
   .dashboard-layout,
+  .runtime-layout,
   .progress-layout,
   .section-heading,
   .studio-grid {
@@ -830,6 +883,7 @@ h2 {
 
   .hero-metrics,
   .dashboard-metrics,
+  .simulation-actions,
   .scene-overlay {
     grid-template-columns: 1fr;
   }

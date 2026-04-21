@@ -113,6 +113,42 @@ class LessonAttempt(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class LessonSessionCreate(BaseModel):
+    user_id: int
+
+
+class LessonSessionUpdate(BaseModel):
+    status: str
+    score: int | None = None
+    notes: str | None = None
+
+
+class LessonSession(BaseModel):
+    id: int
+    user_id: int
+    lesson_id: int
+    status: str
+    score: int | None = None
+    notes: str | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    model_config = ConfigDict(from_attributes=True)
+
+
+class LessonEventCreate(BaseModel):
+    event_type: str
+    event_value: str | None = None
+
+
+class LessonEvent(BaseModel):
+    id: int
+    session_id: int
+    event_type: str
+    event_value: str | None = None
+    created_at: datetime | None = None
+    model_config = ConfigDict(from_attributes=True)
+
+
 class LessonRuntime(BaseModel):
     skill: SkillTrack
     course: Course
@@ -123,6 +159,7 @@ class LessonRuntime(BaseModel):
     rubric: list[str]
     prompt: str
     completion: LessonCompletion | None = None
+    active_session: LessonSession | None = None
 
 
 class AICoachRequest(BaseModel):
@@ -187,6 +224,7 @@ class LearnerDashboard(BaseModel):
     in_progress_sessions: int
     completed_lessons: int
     active_lessons: int
+    active_simulation_sessions: int
     recent_activity: list[Progress]
     recommended_skills: list[SkillTrack]
     recommended_courses: list[Course]

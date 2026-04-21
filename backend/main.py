@@ -46,12 +46,14 @@ def ensure_schema():
                 models.Scenario.__table__,
                 models.Course.__table__,
                 models.Module.__table__,
-                models.Lesson.__table__,
-                models.LessonCompletion.__table__,
-                models.LessonAttempt.__table__,
-                models.UserProgress.__table__,
-            ],
-            checkfirst=True,
+            models.Lesson.__table__,
+            models.LessonCompletion.__table__,
+            models.LessonAttempt.__table__,
+            models.LessonSession.__table__,
+            models.LessonEvent.__table__,
+            models.UserProgress.__table__,
+        ],
+        checkfirst=True,
         )
     except OperationalError as exc:
         if "already exists" not in str(exc):
@@ -150,6 +152,32 @@ async def submit_lesson_attempt(lesson_id: int, payload: schemas.LessonAttemptCr
     if crud.get_user(db, payload.user_id) is None:
         raise HTTPException(status_code=404, detail="User not found")
     return crud.create_lesson_attempt(db, lesson, payload)
+
+
+@app.post("/lessons/{lesson_id}/sessions/start", response_model=schemas.LessonSession)
+async def start_runtime_session(lesson_id: int, payload: schemas.LessonSessionCreate, db: Session = Depends(get_db)):
+    lesson = crud.get_lesson(db, lesson_id)
+    if lesson is None:
+        raise HTTPException(status_code=404, detail="Lesson not found")
+    if crud.get_user(db, payload.user_id) is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return crud.start_lesson_session(db, lesson, payload)
+
+
+@app.post("/lesson-sessions/{session_id}/events", response_model=schemas.LessonEvent)
+async def create_runtime_event(session_id: int, payload: schemas.LessonEventCreate, db: Session = Depends(get_db)):
+    session = crud.get_lesson_session(db, session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Lesson session not found")
+    return crud.log_lesson_event(db, session, payload)
+
+
+@app.post("/lesson-sessions/{session_id}/complete", response_model=schemas.LessonSession)
+async def complete_runtime_session(session_id: int, payload: schemas.LessonSessionUpdate, db: Session = Depends(get_db)):
+    session = crud.get_lesson_session(db, session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Lesson session not found")
+    return crud.complete_lesson_session(db, session, payload)
 
 
 @app.post("/lessons/{lesson_id}/complete", response_model=schemas.LessonCompletion)

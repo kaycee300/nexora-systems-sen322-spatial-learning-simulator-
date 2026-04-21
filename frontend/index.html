@@ -207,6 +207,14 @@
 
         <div class="runtime-layout">
           <div class="progress-panel runtime-panel">
+            <div class="runtime-stage">
+              <canvas id="lesson-canvas" aria-label="Interactive lesson simulation"></canvas>
+              <div class="runtime-stage-overlay">
+                <span id="runtime-stage-label">Flagship simulation: electrical wiring</span>
+                <strong id="runtime-score-pill">Score: 0</strong>
+              </div>
+            </div>
+
             <p class="note-label">Current lesson</p>
             <h3 id="runtime-lesson-title">Choose a lesson to begin</h3>
             <p id="runtime-lesson-context" class="section-summary">
@@ -216,6 +224,22 @@
               <span id="runtime-skill-pill">Skill pending</span>
               <span id="runtime-module-pill">Module pending</span>
               <span id="runtime-status-pill">Status: not started</span>
+            </div>
+
+            <div class="runtime-actions">
+              <button type="button" id="start-session-button" class="btn btn-primary">Start lesson session</button>
+              <button type="button" id="reset-simulation-button" class="btn btn-secondary">Reset simulation</button>
+            </div>
+
+            <div class="runtime-block">
+              <p class="note-label">Simulation actions</p>
+              <div class="simulation-actions">
+                <button type="button" class="btn btn-secondary simulation-action" data-action="inspect_panel">Inspect panel</button>
+                <button type="button" class="btn btn-secondary simulation-action" data-action="pick_multimeter">Pick multimeter</button>
+                <button type="button" class="btn btn-secondary simulation-action" data-action="identify_live_wire">Identify live wire</button>
+                <button type="button" class="btn btn-secondary simulation-action" data-action="secure_circuit">Secure circuit</button>
+              </div>
+              <p id="simulation-message" class="message" aria-live="polite"></p>
             </div>
 
             <div class="runtime-block">

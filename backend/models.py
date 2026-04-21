@@ -78,6 +78,29 @@ class LessonAttempt(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
+class LessonSession(Base):
+    __tablename__ = "lesson_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    lesson_id = Column(Integer, ForeignKey("lessons.id"), nullable=False)
+    status = Column(String, nullable=False)
+    score = Column(Integer, nullable=True)
+    notes = Column(String, nullable=True)
+    started_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+
+
+class LessonEvent(Base):
+    __tablename__ = "lesson_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(Integer, ForeignKey("lesson_sessions.id"), nullable=False)
+    event_type = Column(String, nullable=False)
+    event_value = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
 class User(Base):
     __tablename__ = "users"
 

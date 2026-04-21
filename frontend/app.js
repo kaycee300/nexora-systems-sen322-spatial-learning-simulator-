@@ -3,6 +3,16 @@ const STORAGE_KEY = "skillscape-current-user";
 
 let currentUser = null;
 let currentLessonRuntime = null;
+let currentLessonSession = null;
+let lessonSimulation = null;
+let simulationState = null;
+
+const ELECTRICAL_ACTIONS = [
+  "inspect_panel",
+  "pick_multimeter",
+  "identify_live_wire",
+  "secure_circuit",
+];
 
 function setMessage(text, tone = "default", elementId = "progress-message") {
   const messageEl = document.getElementById(elementId);
@@ -131,15 +141,292 @@ async function saveLessonCompletion(payload) {
   return data;
 }
 
+async function startLessonSession(lessonId, userId) {
+  const response = await fetch(`${BACKEND_URL}/lessons/${lessonId}/sessions/start`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_id: userId }),
+  });
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || "Unable to start lesson session.");
+  }
+
+  return data;
+}
+
+async function logLessonEvent(sessionId, payload) {
+  const response = await fetch(`${BACKEND_URL}/lesson-sessions/${sessionId}/events`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || "Unable to log lesson event.");
+  }
+
+  return data;
+}
+
+async function completeLessonSession(sessionId, payload) {
+  const response = await fetch(`${BACKEND_URL}/lesson-sessions/${sessionId}/complete`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || "Unable to complete lesson session.");
+  }
+
+  return data;
+}
+
+function createInitialSimulationState() {
+  return {
+    actions: [],
+    score: 0,
+    message: "Start the lesson session, then inspect the panel first.",
+    panelInspected: false,
+    toolPicked: false,
+    wireIdentified: false,
+    circuitSecured: false,
+    mistakes: 0,
+  };
+}
+
+function setSimulationMessage(text, tone = "default") {
+  const el = document.getElementById("simulation-message");
+  el.textContent = text;
+  el.style.color = tone === "error" ? "#ff9d8d" : tone === "success" ? "#ffd08b" : "#efceb0";
+}
+
+function syncSimulationButtons() {
+  document.querySelectorAll(".simulation-action").forEach((button) => {
+    button.classList.toggle("is-complete", simulationState.actions.includes(button.dataset.action));
+  });
+  document.getElementById("runtime-score-pill").textContent = `Score: ${simulationState.score}`;
+}
+
+function buildSimulationScene() {
+  const canvas = document.getElementById("lesson-canvas");
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+  camera.position.set(0, 1.2, 7.2);
+
+  const ambient = new THREE.HemisphereLight(0xffedcf, 0x120f0d, 1.3);
+  scene.add(ambient);
+
+  const keyLight = new THREE.DirectionalLight(0xffb25d, 1.6);
+  keyLight.position.set(4, 6, 5);
+  scene.add(keyLight);
+
+  const fillLight = new THREE.PointLight(0x67e8f9, 12, 16);
+  fillLight.position.set(-4, 3, 4);
+  scene.add(fillLight);
+
+  const stage = new THREE.Mesh(
+    new THREE.CylinderGeometry(3.3, 3.7, 0.4, 48),
+    new THREE.MeshStandardMaterial({ color: 0x211814, metalness: 0.28, roughness: 0.65 }),
+  );
+  stage.position.y = -1.8;
+  scene.add(stage);
+
+  const board = new THREE.Mesh(
+    new THREE.BoxGeometry(4.1, 2.7, 0.22),
+    new THREE.MeshStandardMaterial({ color: 0x2d241f, metalness: 0.08, roughness: 0.82 }),
+  );
+  board.position.set(0, 0, 0);
+  scene.add(board);
+
+  const wireLive = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.08, 0.08, 2.6, 24),
+    new THREE.MeshStandardMaterial({ color: 0x4f4f4f, emissive: 0x111111 }),
+  );
+  wireLive.rotation.z = Math.PI / 2;
+  wireLive.position.set(0, 0.6, 0.2);
+  scene.add(wireLive);
+
+  const wireNeutral = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.08, 0.08, 2.6, 24),
+    new THREE.MeshStandardMaterial({ color: 0x4f4f4f, emissive: 0x111111 }),
+  );
+  wireNeutral.rotation.z = Math.PI / 2;
+  wireNeutral.position.set(0, 0, 0.2);
+  scene.add(wireNeutral);
+
+  const wireGround = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.08, 0.08, 2.6, 24),
+    new THREE.MeshStandardMaterial({ color: 0x4f4f4f, emissive: 0x111111 }),
+  );
+  wireGround.rotation.z = Math.PI / 2;
+  wireGround.position.set(0, -0.6, 0.2);
+  scene.add(wireGround);
+
+  const meter = new THREE.Mesh(
+    new THREE.BoxGeometry(0.85, 1.2, 0.35),
+    new THREE.MeshStandardMaterial({ color: 0x1f3d49, emissive: 0x092028, metalness: 0.32, roughness: 0.35 }),
+  );
+  meter.position.set(-2.25, -0.25, 0.55);
+  scene.add(meter);
+
+  const lamp = new THREE.Mesh(
+    new THREE.SphereGeometry(0.28, 24, 24),
+    new THREE.MeshStandardMaterial({ color: 0xffd78f, emissive: 0x4f3310, metalness: 0.15, roughness: 0.3 }),
+  );
+  lamp.position.set(1.5, 1.0, 0.6);
+  scene.add(lamp);
+
+  function resize() {
+    const { clientWidth, clientHeight } = canvas;
+    renderer.setSize(clientWidth, clientHeight, false);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    camera.aspect = clientWidth / clientHeight;
+    camera.updateProjectionMatrix();
+  }
+
+  resize();
+  window.addEventListener("resize", resize);
+
+  const clock = new THREE.Clock();
+  function animate() {
+    const elapsed = clock.getElapsedTime();
+    board.rotation.y = Math.sin(elapsed * 0.5) * 0.06;
+    lamp.scale.setScalar(1 + Math.sin(elapsed * 2.4) * 0.03 + (simulationState?.circuitSecured ? 0.08 : 0));
+    renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+  }
+
+  animate();
+
+  return { scene, renderer, camera, board, wireLive, wireNeutral, wireGround, meter, lamp };
+}
+
+function renderSimulationState() {
+  if (!lessonSimulation || !simulationState) {
+    return;
+  }
+
+  lessonSimulation.board.material.color.set(simulationState.panelInspected ? 0x3b2d26 : 0x2d241f);
+  lessonSimulation.meter.position.x = simulationState.toolPicked ? -1.3 : -2.25;
+  lessonSimulation.wireLive.material.color.set(simulationState.wireIdentified ? 0xff9a3d : 0x4f4f4f);
+  lessonSimulation.wireLive.material.emissive.set(simulationState.wireIdentified ? 0x6a2f00 : 0x111111);
+  lessonSimulation.wireNeutral.material.color.set(0x7e92b8);
+  lessonSimulation.wireGround.material.color.set(0x4fb17c);
+  lessonSimulation.lamp.material.emissive.set(simulationState.circuitSecured ? 0xffa01c : 0x4f3310);
+
+  syncSimulationButtons();
+  setSimulationMessage(simulationState.message, simulationState.mistakes ? "default" : "success");
+}
+
+function initLessonPlayer() {
+  lessonSimulation = buildSimulationScene();
+  simulationState = createInitialSimulationState();
+  renderSimulationState();
+}
+
+function isElectricalRuntime(runtime) {
+  return runtime?.skill?.slug === "electrical-installation";
+}
+
+async function ensureLessonSession() {
+  if (!requireSignedInForLessonAction()) {
+    return null;
+  }
+  if (!currentLessonRuntime) {
+    setMessage("Select a lesson first.", "error", "lesson-attempt-message");
+    return null;
+  }
+  if (currentLessonSession) {
+    return currentLessonSession;
+  }
+
+  currentLessonSession = await startLessonSession(currentLessonRuntime.lesson.id, currentUser.id);
+  document.getElementById("runtime-status-pill").textContent = `Status: ${currentLessonSession.status}`;
+  return currentLessonSession;
+}
+
+async function runSimulationAction(action) {
+  if (!currentLessonRuntime) {
+    setSimulationMessage("Select a lesson first.", "error");
+    return;
+  }
+  if (!isElectricalRuntime(currentLessonRuntime)) {
+    setSimulationMessage("Interactive simulation is currently available for Electrical Installation lessons.", "error");
+    return;
+  }
+
+  const session = await ensureLessonSession();
+  if (!session) {
+    return;
+  }
+
+  if (simulationState.actions.includes(action)) {
+    setSimulationMessage("That action is already complete.");
+    return;
+  }
+
+  let correct = false;
+
+  if (action === "inspect_panel" && simulationState.actions.length === 0) {
+    simulationState.panelInspected = true;
+    simulationState.score += 25;
+    simulationState.message = "Panel inspected. Pick the multimeter next.";
+    correct = true;
+  } else if (action === "pick_multimeter" && simulationState.panelInspected) {
+    simulationState.toolPicked = true;
+    simulationState.score += 25;
+    simulationState.message = "Tool selected. Identify the live wire safely.";
+    correct = true;
+  } else if (action === "identify_live_wire" && simulationState.toolPicked) {
+    simulationState.wireIdentified = true;
+    simulationState.score += 25;
+    simulationState.message = "Live wire identified. Secure the circuit to finish.";
+    correct = true;
+  } else if (action === "secure_circuit" && simulationState.wireIdentified) {
+    simulationState.circuitSecured = true;
+    simulationState.score += 25;
+    simulationState.message = "Circuit secured. You can now complete the lesson.";
+    correct = true;
+  } else {
+    simulationState.mistakes += 1;
+    simulationState.score = Math.max(0, simulationState.score - 10);
+    simulationState.message = "Wrong order. Re-check the safe sequence before proceeding.";
+  }
+
+  if (correct) {
+    simulationState.actions.push(action);
+  }
+
+  renderSimulationState();
+  await logLessonEvent(session.id, {
+    event_type: correct ? action : "sequence_error",
+    event_value: correct ? action : `${action}:out_of_order`,
+  });
+}
+
+async function resetSimulation() {
+  simulationState = createInitialSimulationState();
+  currentLessonSession = null;
+  document.getElementById("runtime-status-pill").textContent = "Status: not started";
+  renderSimulationState();
+}
+
 function renderLessonRuntime(runtime) {
   currentLessonRuntime = runtime;
+  currentLessonSession = runtime.active_session;
   document.getElementById("runtime-lesson-title").textContent = runtime.lesson.title;
   document.getElementById("runtime-lesson-context").textContent =
     `${runtime.skill.title} • ${runtime.course.title} • ${runtime.module.title}`;
   document.getElementById("runtime-skill-pill").textContent = runtime.skill.title;
   document.getElementById("runtime-module-pill").textContent = runtime.module.title;
   document.getElementById("runtime-status-pill").textContent =
-    `Status: ${runtime.completion ? runtime.completion.status : "not started"}`;
+    `Status: ${runtime.active_session?.status || runtime.completion?.status || "not started"}`;
   document.getElementById("runtime-prompt").textContent = runtime.prompt;
 
   const checklistEl = document.getElementById("runtime-checklist");
@@ -155,6 +442,16 @@ function renderLessonRuntime(runtime) {
   const coachEl = document.getElementById("ai-coach-response");
   coachEl.textContent = runtime.completion?.feedback
     || "Ask the AI coach for feedback or submit an assessment to generate lesson feedback.";
+
+  if (isElectricalRuntime(runtime)) {
+    simulationState = createInitialSimulationState();
+    if (runtime.active_session) {
+      simulationState.message = "Session resumed. Continue the safe sequence.";
+    }
+    renderSimulationState();
+  } else {
+    setSimulationMessage("This lesson supports assessment and coaching. The flagship interactive simulator is currently built for Electrical Installation.");
+  }
 }
 
 function renderCourse(course) {
@@ -217,10 +514,13 @@ function renderSkills(skills) {
     return;
   }
 
+  const defaultSlug = "electrical-installation";
+
   skills.forEach((skill, index) => {
     const card = document.createElement("button");
     card.type = "button";
-    card.className = `skill-card${index === 0 ? " is-active" : ""}`;
+    const isActive = skill.slug === defaultSlug || (index === 0 && !skills.some((item) => item.slug === defaultSlug));
+    card.className = `skill-card${isActive ? " is-active" : ""}`;
     card.innerHTML = `
       <h3>${skill.title}</h3>
       <p>${skill.description}</p>
@@ -303,8 +603,8 @@ function renderDashboardState(dashboard) {
   document.getElementById("dashboard-subtitle").textContent =
     dashboard.user.learning_goal || "Your learning profile is active. Pick a scenario and keep building momentum.";
   document.getElementById("dashboard-total").textContent = String(dashboard.total_progress_entries);
-  document.getElementById("dashboard-completed").textContent = String(dashboard.completed_sessions);
-  document.getElementById("dashboard-active").textContent = String(dashboard.active_lessons || dashboard.in_progress_sessions);
+  document.getElementById("dashboard-completed").textContent = String(dashboard.completed_lessons || dashboard.completed_sessions);
+  document.getElementById("dashboard-active").textContent = String(dashboard.active_simulation_sessions || dashboard.active_lessons || dashboard.in_progress_sessions);
 
   const activityEl = document.getElementById("dashboard-activity");
   activityEl.innerHTML = "";
@@ -745,6 +1045,7 @@ async function handleLogin(event) {
 
 function handleLogout() {
   clearCurrentUser();
+  currentLessonSession = null;
   syncProgressIdentity();
   renderLoggedOutDashboard();
   setMessage("Logged out.", "default", "auth-message");
@@ -755,13 +1056,15 @@ window.addEventListener("DOMContentLoaded", async () => {
   loadCurrentUser();
   syncProgressIdentity();
   renderLoggedOutDashboard();
+  initLessonPlayer();
 
   try {
     const [skills, scenarios] = await Promise.all([fetchSkills(), fetchScenarios()]);
     renderSkills(skills);
     renderScenarios(scenarios);
     if (skills.length) {
-      const firstCourse = await fetchSkillCourse(skills[0].id);
+      const defaultSkill = skills.find((skill) => skill.slug === "electrical-installation") || skills[0];
+      const firstCourse = await fetchSkillCourse(defaultSkill.id);
       renderCourse(firstCourse);
     }
   } catch (error) {
@@ -779,9 +1082,32 @@ window.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("register-form").addEventListener("submit", handleRegister);
   document.getElementById("login-form").addEventListener("submit", handleLogin);
   document.getElementById("logout-button").addEventListener("click", handleLogout);
+  document.getElementById("start-session-button").addEventListener("click", async () => {
+    try {
+      await ensureLessonSession();
+      setSimulationMessage("Lesson session started. Inspect the panel first.", "success");
+    } catch (error) {
+      setSimulationMessage(error.message, "error");
+    }
+  });
+  document.getElementById("reset-simulation-button").addEventListener("click", resetSimulation);
+  document.querySelectorAll(".simulation-action").forEach((button) => {
+    button.addEventListener("click", () => {
+      runSimulationAction(button.dataset.action);
+    });
+  });
   document.getElementById("ask-ai-button").addEventListener("click", handleAskAICoach);
   document.getElementById("submit-attempt-button").addEventListener("click", handleSubmitLessonAttempt);
-  document.getElementById("complete-lesson-button").addEventListener("click", () => updateLessonCompletion("Completed"));
+  document.getElementById("complete-lesson-button").addEventListener("click", async () => {
+    await updateLessonCompletion("Completed");
+    if (currentLessonSession) {
+      await completeLessonSession(currentLessonSession.id, {
+        status: "Completed",
+        score: simulationState?.score || 100,
+        notes: simulationState?.actions.join(", ") || "completed",
+      });
+    }
+  });
   document.getElementById("start-lesson-button").addEventListener("click", () => updateLessonCompletion("In progress"));
   document.getElementById("progress-form").addEventListener("submit", submitProgress);
 });
