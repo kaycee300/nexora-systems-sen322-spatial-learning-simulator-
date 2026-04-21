@@ -149,6 +149,10 @@ class LessonEvent(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class LessonSessionDetail(LessonSession):
+    events: list[LessonEvent]
+
+
 class LessonRuntime(BaseModel):
     skill: SkillTrack
     course: Course

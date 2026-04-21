@@ -172,6 +172,14 @@ async def create_runtime_event(session_id: int, payload: schemas.LessonEventCrea
     return crud.log_lesson_event(db, session, payload)
 
 
+@app.get("/lesson-sessions/{session_id}", response_model=schemas.LessonSessionDetail)
+async def read_runtime_session(session_id: int, db: Session = Depends(get_db)):
+    session = crud.get_lesson_session(db, session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Lesson session not found")
+    return crud.build_lesson_session_detail(db, session)
+
+
 @app.post("/lesson-sessions/{session_id}/complete", response_model=schemas.LessonSession)
 async def complete_runtime_session(session_id: int, payload: schemas.LessonSessionUpdate, db: Session = Depends(get_db)):
     session = crud.get_lesson_session(db, session_id)

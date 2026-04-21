@@ -513,6 +513,15 @@ def get_lesson_session(db: Session, session_id: int):
     return db.query(models.LessonSession).filter(models.LessonSession.id == session_id).first()
 
 
+def get_lesson_events(db: Session, session_id: int):
+    return (
+        db.query(models.LessonEvent)
+        .filter(models.LessonEvent.session_id == session_id)
+        .order_by(models.LessonEvent.created_at.asc(), models.LessonEvent.id.asc())
+        .all()
+    )
+
+
 def create_user(db: Session, payload: schemas.UserCreate):
     user = models.User(
         name=payload.name.strip(),
@@ -977,6 +986,13 @@ def complete_lesson_session(db: Session, session: models.LessonSession, payload:
     db.commit()
     db.refresh(session)
     return session
+
+
+def build_lesson_session_detail(db: Session, session: models.LessonSession):
+    return schemas.LessonSessionDetail(
+        **schemas.LessonSession.model_validate(session).model_dump(),
+        events=[schemas.LessonEvent.model_validate(item) for item in get_lesson_events(db, session.id)],
+    )
 
 
 def seed_scenarios(db: Session):

@@ -7,29 +7,52 @@ let currentLessonSession = null;
 let lessonSimulation = null;
 let simulationState = null;
 const SIMULATION_BLUEPRINTS = {
-  "electrical-installation": {
-    label: "Playable simulation: electrical wiring",
-    instructions: [
-      { action: "inspect_panel", label: "Inspect panel" },
-      { action: "pick_multimeter", label: "Pick multimeter" },
-      { action: "identify_live_wire", label: "Identify live wire" },
-      { action: "secure_circuit", label: "Secure circuit" },
-    ],
-    initialMessage: "Start the lesson session, then click the panel to inspect it.",
-    wrongOrderMessage: "Wrong order. Inspect first, then use the right tool before isolating the live wire.",
-  },
-  "plumbing-systems": {
-    label: "Playable simulation: sink leak repair",
-    instructions: [
-      { action: "inspect_sink", label: "Inspect sink trap" },
-      { action: "pick_wrench", label: "Pick pipe wrench" },
-      { action: "tighten_trap", label: "Tighten trap joint" },
-      { action: "test_leak", label: "Run leak test" },
-    ],
-    initialMessage: "Start the lesson session, then inspect the sink trap first.",
-    wrongOrderMessage: "Wrong order. Inspect the leak source first, then select the right tool before tightening and testing.",
-  },
+  "electrical-installation": createBlueprint("Playable simulation: electrical wiring", "electrical", ["Inspect panel", "Pick multimeter", "Identify live wire", "Secure circuit"], "Inspect the panel first, then use the multimeter before isolating the live wire."),
+  "solar-installation": createBlueprint("Playable simulation: solar setup", "solar", ["Inspect roof layout", "Pick mounting guide", "Align panel row", "Confirm inverter route"], "Survey the layout before touching mounting or wiring."),
+  "plumbing-systems": createBlueprint("Playable simulation: sink leak repair", "plumbing", ["Inspect sink trap", "Pick pipe wrench", "Tighten trap joint", "Run leak test"], "Inspect the leak source before tightening or testing."),
+  "carpentry-and-joinery": createBlueprint("Playable simulation: joint layout", "carpentry", ["Inspect timber face", "Pick square", "Mark joint line", "Verify alignment"], "Inspect and measure before you mark or verify."),
+  "welding-and-fabrication": createBlueprint("Playable simulation: weld prep", "welding", ["Inspect seam", "Pick helmet", "Clamp joint", "Confirm weld path"], "Inspect and gear up before clamping or confirming the pass."),
+  "mechanical-repair": createBlueprint("Playable simulation: pump diagnostics", "mechanical", ["Inspect housing", "Pick pressure gauge", "Trace pressure line", "Confirm repair step"], "Inspect the system before choosing instruments or repair steps."),
+  "auto-maintenance": createBlueprint("Playable simulation: service bay check", "vehicle", ["Inspect engine bay", "Pick scanner", "Check service point", "Confirm maintenance"], "Inspect first, then scan before calling the next service action."),
+  "hvac-basics": createBlueprint("Playable simulation: cooling diagnostics", "hvac", ["Inspect airflow path", "Pick thermostat probe", "Check vent output", "Confirm cooling issue"], "Inspect the airflow before testing output or diagnosing."),
+  "painting-and-finishing": createBlueprint("Playable simulation: wall prep", "paint", ["Inspect wall", "Pick roller kit", "Prime repair zone", "Confirm finish plan"], "Inspect the surface before priming or finishing."),
+  "tiling-and-flooring": createBlueprint("Playable simulation: tile layout", "tiling", ["Inspect floor grid", "Pick spacer set", "Set guide line", "Confirm layout"], "Read the layout before placing guides or confirming the pattern."),
+  "furniture-making": createBlueprint("Playable simulation: bench assembly", "furniture", ["Inspect components", "Pick assembly plan", "Clamp frame", "Verify stability"], "Inspect the parts before clamping or verifying the build."),
+  "fashion-tailoring": createBlueprint("Playable simulation: garment fitting", "tailoring", ["Inspect fabric layout", "Pick tape", "Mark fit line", "Confirm adjustment"], "Inspect the fabric before marking or adjusting."),
+  "barbing-and-haircare": createBlueprint("Playable simulation: haircut setup", "barber", ["Inspect section", "Pick clipper", "Set guide path", "Confirm finish"], "Inspect the section before clipping or finishing."),
+  "beauty-and-esthetics": createBlueprint("Playable simulation: beauty station", "beauty", ["Inspect station", "Pick sanitation kit", "Prep treatment area", "Confirm aftercare"], "Set the station safely before treatment or aftercare."),
+  "culinary-foundations": createBlueprint("Playable simulation: kitchen prep", "culinary", ["Inspect station", "Pick chef knife", "Prep ingredients", "Confirm plating path"], "Inspect and set the station before prep or plating."),
+  "baking-and-pastry": createBlueprint("Playable simulation: dough prep", "baking", ["Inspect ingredients", "Pick scale", "Measure dough mix", "Confirm oven timing"], "Inspect ingredients before mixing or timing."),
+  "mixology-and-cafe-service": createBlueprint("Playable simulation: cafe order flow", "cafe", ["Inspect order board", "Pick ticket", "Assemble drink station", "Confirm service handoff"], "Read the order before assembling or handing off."),
+  "event-decoration": createBlueprint("Playable simulation: reception layout", "event", ["Inspect floor plan", "Pick mood board", "Place decor anchor", "Confirm guest flow"], "Inspect the layout before placing decor."),
+  "photography-and-content-production": createBlueprint("Playable simulation: shoot setup", "photo", ["Inspect subject", "Pick camera", "Set key light", "Confirm framing"], "Inspect the subject before lighting and framing."),
+  "video-editing": createBlueprint("Playable simulation: edit assembly", "video", ["Inspect footage", "Pick timeline", "Set cut sequence", "Confirm export flow"], "Review footage before editing or exporting."),
+  "graphic-design": createBlueprint("Playable simulation: poster critique", "design", ["Inspect layout", "Pick grid", "Adjust hierarchy", "Confirm export"], "Inspect the layout before adjusting hierarchy."),
+  "ui-ux-design": createBlueprint("Playable simulation: app flow review", "ux", ["Inspect flow", "Pick wireframe board", "Adjust user path", "Confirm interaction"], "Review the user path before adjusting or confirming."),
+  "frontend-development": createBlueprint("Playable simulation: responsive build", "frontend", ["Inspect viewport", "Pick code editor", "Adjust layout block", "Confirm data state"], "Inspect the viewport before editing the layout."),
+  "backend-development": createBlueprint("Playable simulation: API design", "backend", ["Inspect resource map", "Pick API console", "Validate endpoint flow", "Confirm response"], "Inspect the resource map before validating endpoints."),
+  "data-analysis": createBlueprint("Playable simulation: sheet cleanup", "data", ["Inspect dataset", "Pick spreadsheet", "Clean signal field", "Confirm insight"], "Inspect the data before cleaning or reporting."),
+  "cybersecurity-awareness": createBlueprint("Playable simulation: phishing review", "cyber", ["Inspect inbox", "Pick checklist", "Flag suspicious mail", "Confirm report"], "Inspect the inbox before flagging or reporting."),
+  "digital-marketing": createBlueprint("Playable simulation: campaign planner", "marketing", ["Inspect campaign goal", "Pick canvas", "Align audience", "Confirm launch"], "Review the goal before aligning channels or launch."),
+  "sales-and-client-service": createBlueprint("Playable simulation: client discovery", "sales", ["Inspect client brief", "Pick call script", "Map client need", "Confirm next step"], "Review the client brief before deciding the next step."),
+  "ai-workflow-planning": createBlueprint("Playable simulation: AI planning", "ai", ["Inspect problem brief", "Pick planning board", "Align model path", "Confirm evaluation"], "Inspect the problem before choosing models or evaluation."),
+  "phone-and-device-repair": createBlueprint("Playable simulation: device repair", "device", ["Inspect device shell", "Pick toolkit", "Access fault point", "Confirm reassembly"], "Inspect the device before opening or reassembling."),
 };
+
+function createBlueprint(label, scene, labels, wrongOrderMessage) {
+  const actions = labels.map((entry, index) => ({
+    action: entry.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, ""),
+    label: entry,
+    index,
+  }));
+  return {
+    label,
+    scene,
+    instructions: actions,
+    initialMessage: `Start the lesson session, then ${labels[0].charAt(0).toLowerCase()}${labels[0].slice(1)}.`,
+    wrongOrderMessage,
+  };
+}
 
 function setMessage(text, tone = "default", elementId = "progress-message") {
   const messageEl = document.getElementById(elementId);
@@ -211,6 +234,15 @@ async function completeLessonSession(sessionId, payload) {
   return data;
 }
 
+async function fetchLessonSession(sessionId) {
+  const response = await fetch(`${BACKEND_URL}/lesson-sessions/${sessionId}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.detail || "Unable to load lesson session.");
+  }
+  return data;
+}
+
 function createInitialSimulationState() {
   return {
     actions: [],
@@ -225,6 +257,8 @@ function createInitialSimulationState() {
     leakTested: false,
     mistakes: 0,
     eventLog: [],
+    failed: false,
+    retries: 0,
   };
 }
 
@@ -243,7 +277,7 @@ function renderSimulationHints() {
   const blueprint = getSimulationBlueprint(currentLessonRuntime?.skill?.slug);
 
   if (!blueprint) {
-    hintsEl.innerHTML = "<span class=\"simulation-hint\">Interactive canvas gameplay is currently available for Electrical Installation and Plumbing Systems.</span>";
+    hintsEl.innerHTML = "<span class=\"simulation-hint\">Interactive canvas gameplay is available across all SkillScape tracks.</span>";
     return;
   }
 
@@ -505,6 +539,116 @@ function buildPlumbingObjects() {
   };
 }
 
+function buildBoardAndToolScene(color, toolColor, actionMap, extra = {}) {
+  const board = new THREE.Mesh(
+    new THREE.BoxGeometry(4.2, 2.5, 0.22),
+    new THREE.MeshStandardMaterial({ color, metalness: 0.1, roughness: 0.72, emissive: 0x000000 }),
+  );
+  board.position.set(0, 0, 0);
+  board.userData = { action: actionMap[0], baseEmissive: 0x000000 };
+
+  const tool = new THREE.Mesh(
+    new THREE.BoxGeometry(1.35, 0.28, 0.4),
+    new THREE.MeshStandardMaterial({ color: toolColor, emissive: 0x1a110a, metalness: 0.2, roughness: 0.45 }),
+  );
+  tool.position.set(-2.0, -0.95, 0.62);
+  tool.rotation.z = -0.25;
+  tool.userData = { action: actionMap[1], baseEmissive: 0x1a110a };
+
+  const work = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.22, 0.22, 2.0, 24),
+    new THREE.MeshStandardMaterial({ color: 0x6f7a82, emissive: 0x101010, metalness: 0.36, roughness: 0.33 }),
+  );
+  work.rotation.z = Math.PI / 2;
+  work.position.set(0, 0.15, 0.35);
+  work.userData = { action: actionMap[2], baseEmissive: 0x101010 };
+
+  const confirm = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.34, 0.34, 0.18, 24),
+    new THREE.MeshStandardMaterial({ color: 0x62b4c8, emissive: 0x112f34, metalness: 0.3, roughness: 0.28 }),
+  );
+  confirm.position.set(1.75, 0.35, 0.7);
+  confirm.rotation.x = Math.PI / 2;
+  confirm.userData = { action: actionMap[3], baseEmissive: 0x112f34 };
+
+  return {
+    hero: board,
+    board,
+    tool,
+    work,
+    confirm,
+    accent: extra.accent || null,
+    interactive: [board, tool, work, confirm],
+  };
+}
+
+function buildSceneByTheme(theme, actionMap) {
+  switch (theme) {
+    case "electrical":
+      return buildElectricalObjects();
+    case "plumbing":
+      return buildPlumbingObjects();
+    case "solar":
+      return buildBoardAndToolScene(0x2d241f, 0x3d5f6b, actionMap);
+    case "carpentry":
+      return buildBoardAndToolScene(0x5a3a27, 0xb47a46, actionMap);
+    case "welding":
+      return buildBoardAndToolScene(0x2d2d30, 0x7c4b3c, actionMap);
+    case "mechanical":
+      return buildBoardAndToolScene(0x30363c, 0x8f5a35, actionMap);
+    case "vehicle":
+      return buildBoardAndToolScene(0x2a3137, 0x385f7a, actionMap);
+    case "hvac":
+      return buildBoardAndToolScene(0x253039, 0x4c7f95, actionMap);
+    case "paint":
+      return buildBoardAndToolScene(0x6a574b, 0xd08b55, actionMap);
+    case "tiling":
+      return buildBoardAndToolScene(0x8c8f94, 0xd2d4d7, actionMap);
+    case "furniture":
+      return buildBoardAndToolScene(0x6a4a34, 0xaa7a4c, actionMap);
+    case "tailoring":
+      return buildBoardAndToolScene(0x58414d, 0xc4867f, actionMap);
+    case "barber":
+      return buildBoardAndToolScene(0x2a2e32, 0x7f6f3e, actionMap);
+    case "beauty":
+      return buildBoardAndToolScene(0x735260, 0xca8da8, actionMap);
+    case "culinary":
+      return buildBoardAndToolScene(0x4e3b31, 0xc1a27a, actionMap);
+    case "baking":
+      return buildBoardAndToolScene(0x775d52, 0xd8b999, actionMap);
+    case "cafe":
+      return buildBoardAndToolScene(0x553a2f, 0xb56b42, actionMap);
+    case "event":
+      return buildBoardAndToolScene(0x614048, 0xc99a59, actionMap);
+    case "photo":
+      return buildBoardAndToolScene(0x2a2c34, 0x556a88, actionMap);
+    case "video":
+      return buildBoardAndToolScene(0x242834, 0x6c79a1, actionMap);
+    case "design":
+      return buildBoardAndToolScene(0x473f4f, 0xc58a52, actionMap);
+    case "ux":
+      return buildBoardAndToolScene(0x35435a, 0x8cb2d2, actionMap);
+    case "frontend":
+      return buildBoardAndToolScene(0x273a4b, 0x5fb7c7, actionMap);
+    case "backend":
+      return buildBoardAndToolScene(0x26303d, 0x7d9bb4, actionMap);
+    case "data":
+      return buildBoardAndToolScene(0x2f3941, 0x67a0be, actionMap);
+    case "cyber":
+      return buildBoardAndToolScene(0x1f2e2d, 0x4fb17c, actionMap);
+    case "marketing":
+      return buildBoardAndToolScene(0x4d3340, 0xd07a55, actionMap);
+    case "sales":
+      return buildBoardAndToolScene(0x553b34, 0xc28a54, actionMap);
+    case "ai":
+      return buildBoardAndToolScene(0x2f2948, 0x7d78d8, actionMap);
+    case "device":
+      return buildBoardAndToolScene(0x30353f, 0x798492, actionMap);
+    default:
+      return buildBoardAndToolScene(0x40342d, 0x8e6f59, actionMap);
+  }
+}
+
 function configureLessonSimulation(runtime) {
   if (!lessonSimulation) {
     return;
@@ -514,8 +658,8 @@ function configureLessonSimulation(runtime) {
     lessonSimulation.root.remove(lessonSimulation.root.children[0]);
   }
 
-  const builder = runtime?.skill?.slug === "plumbing-systems" ? buildPlumbingObjects : buildElectricalObjects;
-  lessonSimulation.objects = builder();
+  const blueprint = getSimulationBlueprint(runtime?.skill?.slug || "electrical-installation");
+  lessonSimulation.objects = buildSceneByTheme(blueprint?.scene || "electrical", blueprint.instructions.map((item) => item.action));
   lessonSimulation.interactive = lessonSimulation.objects.interactive;
   Object.values(lessonSimulation.objects).forEach((object) => {
     if (object instanceof THREE.Mesh) {
@@ -523,8 +667,7 @@ function configureLessonSimulation(runtime) {
     }
   });
 
-  document.getElementById("runtime-stage-label").textContent =
-    getSimulationBlueprint(runtime?.skill?.slug)?.label || "Interactive lesson simulation";
+  document.getElementById("runtime-stage-label").textContent = blueprint?.label || "Interactive lesson simulation";
 }
 
 function appendSimulationEvent(title, detail) {
@@ -555,6 +698,13 @@ function renderSimulationState() {
     lessonSimulation.objects.trap.material.emissive.set(simulationState.trapTightened ? 0x5b2404 : 0x101010);
     lessonSimulation.objects.droplet.visible = !simulationState.leakTested;
     lessonSimulation.objects.valve.rotation.z = simulationState.leakTested ? Math.PI / 2 : 0;
+  }
+
+  if (!isElectricalRuntime(currentLessonRuntime) && !isPlumbingRuntime(currentLessonRuntime)) {
+    lessonSimulation.objects.board.material.color.set(simulationState.actions[0] ? 0x584239 : lessonSimulation.objects.board.material.color.getHex());
+    lessonSimulation.objects.tool.position.set(simulationState.actions.includes(getSimulationBlueprint(currentLessonRuntime.skill.slug).instructions[1].action) ? -0.75 : -2.0, -0.75, 0.62);
+    lessonSimulation.objects.work.material.color.set(simulationState.actions.includes(getSimulationBlueprint(currentLessonRuntime.skill.slug).instructions[2].action) ? 0xffb35c : 0x6f7a82);
+    lessonSimulation.objects.confirm.material.color.set(simulationState.actions.includes(getSimulationBlueprint(currentLessonRuntime.skill.slug).instructions[3].action) ? 0x8ee6c4 : 0x62b4c8);
   }
 
   syncSimulationUI();
@@ -603,12 +753,16 @@ async function runSimulationAction(action) {
   }
   const blueprint = getSimulationBlueprint(currentLessonRuntime.skill.slug);
   if (!blueprint) {
-    setSimulationMessage("Interactive simulation is currently available for Electrical Installation and Plumbing Systems lessons.", "error");
+    setSimulationMessage("Interactive simulation is currently available across all SkillScape lesson tracks.", "error");
     return;
   }
 
   const session = await ensureLessonSession();
   if (!session) {
+    return;
+  }
+  if (simulationState.failed) {
+    setSimulationMessage("This attempt has failed. Reset the simulation to try again.", "error");
     return;
   }
 
@@ -619,23 +773,25 @@ async function runSimulationAction(action) {
 
   let correct = false;
 
+  const instructions = blueprint.instructions.map((item) => item.action);
+
   if (isElectricalRuntime(currentLessonRuntime)) {
-    if (action === "inspect_panel" && simulationState.actions.length === 0) {
+    if (action === instructions[0] && simulationState.actions.length === 0) {
       simulationState.panelInspected = true;
       simulationState.score += 25;
       simulationState.message = "Panel inspected. Click the multimeter next.";
       correct = true;
-    } else if (action === "pick_multimeter" && simulationState.panelInspected) {
+    } else if (action === instructions[1] && simulationState.panelInspected) {
       simulationState.toolPicked = true;
       simulationState.score += 25;
       simulationState.message = "Tool selected. Click the live wire safely.";
       correct = true;
-    } else if (action === "identify_live_wire" && simulationState.toolPicked) {
+    } else if (action === instructions[2] && simulationState.toolPicked) {
       simulationState.wireIdentified = true;
       simulationState.score += 25;
       simulationState.message = "Live wire identified. Click the breaker handle to secure the circuit.";
       correct = true;
-    } else if (action === "secure_circuit" && simulationState.wireIdentified) {
+    } else if (action === instructions[3] && simulationState.wireIdentified) {
       simulationState.circuitSecured = true;
       simulationState.score += 25;
       simulationState.message = "Circuit secured. You can now complete the lesson.";
@@ -644,25 +800,34 @@ async function runSimulationAction(action) {
   }
 
   if (isPlumbingRuntime(currentLessonRuntime)) {
-    if (action === "inspect_sink" && simulationState.actions.length === 0) {
+    if (action === instructions[0] && simulationState.actions.length === 0) {
       simulationState.sinkInspected = true;
       simulationState.score += 25;
       simulationState.message = "Leak source inspected. Click the wrench next.";
       correct = true;
-    } else if (action === "pick_wrench" && simulationState.sinkInspected) {
+    } else if (action === instructions[1] && simulationState.sinkInspected) {
       simulationState.toolPicked = true;
       simulationState.score += 25;
       simulationState.message = "Tool selected. Click the trap joint to tighten it.";
       correct = true;
-    } else if (action === "tighten_trap" && simulationState.toolPicked) {
+    } else if (action === instructions[2] && simulationState.toolPicked) {
       simulationState.trapTightened = true;
       simulationState.score += 25;
       simulationState.message = "Trap tightened. Click the valve to run a leak test.";
       correct = true;
-    } else if (action === "test_leak" && simulationState.trapTightened) {
+    } else if (action === instructions[3] && simulationState.trapTightened) {
       simulationState.leakTested = true;
       simulationState.score += 25;
       simulationState.message = "Leak test passed. You can now complete the lesson.";
+      correct = true;
+    }
+  }
+
+  if (!isElectricalRuntime(currentLessonRuntime) && !isPlumbingRuntime(currentLessonRuntime)) {
+    const expectedAction = instructions[simulationState.actions.length];
+    if (action === expectedAction) {
+      simulationState.score += 25;
+      simulationState.message = `${blueprint.instructions[simulationState.actions.length].label} complete.`;
       correct = true;
     }
   }
@@ -671,6 +836,10 @@ async function runSimulationAction(action) {
     simulationState.mistakes += 1;
     simulationState.score = Math.max(0, simulationState.score - 10);
     simulationState.message = blueprint.wrongOrderMessage;
+    if (simulationState.mistakes >= 2) {
+      simulationState.failed = true;
+      simulationState.message = "Attempt failed. Reset the simulation to retry this lesson path.";
+    }
   }
 
   if (correct) {
@@ -688,11 +857,14 @@ async function runSimulationAction(action) {
 }
 
 async function resetSimulation() {
+  const previousRetries = simulationState?.retries || 0;
   simulationState = createInitialSimulationState();
+  simulationState.retries = previousRetries + 1;
   currentLessonSession = null;
   document.getElementById("runtime-status-pill").textContent = "Status: not started";
   renderSimulationHints();
   renderSimulationEventFeed();
+  appendSimulationEvent("Retry started", `Attempt ${simulationState.retries} is ready.`);
   renderSimulationState();
 }
 
@@ -729,12 +901,21 @@ function renderLessonRuntime(runtime) {
     simulationState.eventLog = [];
     simulationState.message = getSimulationBlueprint(runtime.skill.slug).initialMessage;
     if (runtime.active_session) {
+      fetchLessonSession(runtime.active_session.id)
+        .then((sessionDetail) => {
+          simulationState.eventLog = sessionDetail.events.map((event) => ({
+            title: event.event_type.replace(/_/g, " "),
+            detail: event.event_value || "runtime event",
+          }));
+          renderSimulationEventFeed();
+        })
+        .catch(() => {});
       simulationState.message = "Session resumed. Continue the safe sequence.";
       appendSimulationEvent("Session resumed", "Continue interacting with the scene to finish the task.");
     }
     renderSimulationState();
   } else {
-    setSimulationMessage("This lesson supports assessment and coaching. Interactive canvas lessons are currently available for Electrical Installation and Plumbing Systems.");
+    setSimulationMessage("This lesson supports assessment and coaching. Interactive canvas lessons are currently available across all SkillScape tracks.");
   }
 }
 
@@ -1370,7 +1551,9 @@ window.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("start-session-button").addEventListener("click", async () => {
     try {
       await ensureLessonSession();
-      setSimulationMessage("Lesson session started. Inspect the panel first.", "success");
+      setSimulationMessage(getSimulationBlueprint(currentLessonRuntime?.skill?.slug)?.initialMessage || "Lesson session started.", "success");
+      appendSimulationEvent("Session started", "Interactive simulation is now live.");
+      renderSimulationEventFeed();
     } catch (error) {
       setSimulationMessage(error.message, "error");
     }
@@ -1379,12 +1562,16 @@ window.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("ask-ai-button").addEventListener("click", handleAskAICoach);
   document.getElementById("submit-attempt-button").addEventListener("click", handleSubmitLessonAttempt);
   document.getElementById("complete-lesson-button").addEventListener("click", async () => {
+    if (simulationState?.failed) {
+      setMessage("Reset the failed simulation and retry before completing the lesson.", "error", "lesson-completion-message");
+      return;
+    }
     await updateLessonCompletion("Completed");
     if (currentLessonSession) {
       await completeLessonSession(currentLessonSession.id, {
         status: "Completed",
-        score: simulationState?.score || 100,
-        notes: simulationState?.actions.join(", ") || "completed",
+        score: Math.max(0, (simulationState?.score || 100) - ((simulationState?.retries || 0) * 5)),
+        notes: `${simulationState?.actions.join(", ") || "completed"} | retries:${simulationState?.retries || 0}`,
       });
     }
   });
