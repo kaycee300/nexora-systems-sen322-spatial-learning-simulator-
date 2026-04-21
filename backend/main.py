@@ -45,6 +45,8 @@ def ensure_schema():
             models.Course.__table__,
             models.Module.__table__,
             models.Lesson.__table__,
+            models.LessonCompletion.__table__,
+            models.LessonAttempt.__table__,
             models.UserProgress.__table__,
         ],
         checkfirst=True,
@@ -123,6 +125,46 @@ async def read_skill_track(skill_id: int, db: Session = Depends(get_db)):
     if skill is None:
         raise HTTPException(status_code=404, detail="Skill track not found")
     return crud.build_skill_track_detail(db, skill)
+
+
+@app.get("/lessons/{lesson_id}/runtime", response_model=schemas.LessonRuntime)
+async def read_lesson_runtime(lesson_id: int, user_id: int | None = None, db: Session = Depends(get_db)):
+    lesson = crud.get_lesson(db, lesson_id)
+    if lesson is None:
+        raise HTTPException(status_code=404, detail="Lesson not found")
+    if user_id is not None and crud.get_user(db, user_id) is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return crud.build_lesson_runtime(db, lesson, user_id)
+
+
+@app.post("/lessons/{lesson_id}/attempt", response_model=schemas.LessonAttempt)
+async def submit_lesson_attempt(lesson_id: int, payload: schemas.LessonAttemptCreate, db: Session = Depends(get_db)):
+    lesson = crud.get_lesson(db, lesson_id)
+    if lesson is None:
+        raise HTTPException(status_code=404, detail="Lesson not found")
+    if crud.get_user(db, payload.user_id) is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return crud.create_lesson_attempt(db, lesson, payload)
+
+
+@app.post("/lessons/{lesson_id}/complete", response_model=schemas.LessonCompletion)
+async def complete_lesson(lesson_id: int, payload: schemas.LessonCompletionCreate, db: Session = Depends(get_db)):
+    lesson = crud.get_lesson(db, lesson_id)
+    if lesson is None:
+        raise HTTPException(status_code=404, detail="Lesson not found")
+    if crud.get_user(db, payload.user_id) is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return crud.upsert_lesson_completion(db, lesson, payload)
+
+
+@app.post("/ai/coach", response_model=schemas.AICoachResponse)
+async def lesson_ai_coach(payload: schemas.AICoachRequest, db: Session = Depends(get_db)):
+    lesson = crud.get_lesson(db, payload.lesson_id)
+    if lesson is None:
+        raise HTTPException(status_code=404, detail="Lesson not found")
+    if payload.user_id is not None and crud.get_user(db, payload.user_id) is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return crud.build_ai_coach_feedback(db, lesson, payload.answer)
 
 
 @app.get("/courses", response_model=list[schemas.Course])

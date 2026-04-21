@@ -54,6 +54,30 @@ class Lesson(Base):
     position = Column(Integer, nullable=False)
 
 
+class LessonCompletion(Base):
+    __tablename__ = "lesson_completions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    lesson_id = Column(Integer, ForeignKey("lessons.id"), nullable=False)
+    status = Column(String, nullable=False)
+    score = Column(Integer, nullable=True)
+    feedback = Column(String, nullable=True)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class LessonAttempt(Base):
+    __tablename__ = "lesson_attempts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    lesson_id = Column(Integer, ForeignKey("lessons.id"), nullable=False)
+    answer = Column(String, nullable=False)
+    score = Column(Integer, nullable=False)
+    feedback = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
 class User(Base):
     __tablename__ = "users"
 

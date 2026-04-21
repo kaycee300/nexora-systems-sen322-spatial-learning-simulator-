@@ -79,6 +79,63 @@ class CourseDetail(Course):
     modules: list[ModuleDetail]
 
 
+class LessonCompletionCreate(BaseModel):
+    user_id: int
+    status: str
+    score: int | None = None
+    feedback: str | None = None
+
+
+class LessonCompletion(BaseModel):
+    id: int
+    user_id: int
+    lesson_id: int
+    status: str
+    score: int | None = None
+    feedback: str | None = None
+    updated_at: datetime | None = None
+    model_config = ConfigDict(from_attributes=True)
+
+
+class LessonAttemptCreate(BaseModel):
+    user_id: int
+    answer: str
+
+
+class LessonAttempt(BaseModel):
+    id: int
+    user_id: int
+    lesson_id: int
+    answer: str
+    score: int
+    feedback: str
+    created_at: datetime | None = None
+    model_config = ConfigDict(from_attributes=True)
+
+
+class LessonRuntime(BaseModel):
+    skill: SkillTrack
+    course: Course
+    module: Module
+    lesson: Lesson
+    scenario: Scenario | None = None
+    checklist: list[str]
+    rubric: list[str]
+    prompt: str
+    completion: LessonCompletion | None = None
+
+
+class AICoachRequest(BaseModel):
+    user_id: int | None = None
+    lesson_id: int
+    answer: str
+
+
+class AICoachResponse(BaseModel):
+    feedback: str
+    provider: str
+
+
 class SkillTrackDetail(SkillTrack):
     scenarios: list[Scenario]
     course: CourseDetail | None = None
@@ -128,6 +185,8 @@ class LearnerDashboard(BaseModel):
     total_progress_entries: int
     completed_sessions: int
     in_progress_sessions: int
+    completed_lessons: int
+    active_lessons: int
     recent_activity: list[Progress]
     recommended_skills: list[SkillTrack]
     recommended_courses: list[Course]

@@ -1,14 +1,17 @@
 import hashlib
 import hmac
 import secrets
+import re
 
 from sqlalchemy.orm import Session
 
 try:
     from . import models, schemas
+    from .ai import generate_lesson_coach
 except ImportError:
     import models  # type: ignore
     import schemas  # type: ignore
+    from ai import generate_lesson_coach  # type: ignore
 
 
 SKILL_TRACKS = [
@@ -497,6 +500,14 @@ def get_user(db: Session, user_id: int):
     return db.query(models.User).filter(models.User.id == user_id).first()
 
 
+def get_lesson(db: Session, lesson_id: int):
+    return db.query(models.Lesson).filter(models.Lesson.id == lesson_id).first()
+
+
+def get_module(db: Session, module_id: int):
+    return db.query(models.Module).filter(models.Module.id == module_id).first()
+
+
 def create_user(db: Session, payload: schemas.UserCreate):
     user = models.User(
         name=payload.name.strip(),
@@ -752,16 +763,144 @@ def get_recommended_courses(db: Session, limit: int = 4):
     return get_courses(db)[:limit]
 
 
+def get_lesson_completion(db: Session, user_id: int, lesson_id: int):
+    return (
+        db.query(models.LessonCompletion)
+        .filter(
+            models.LessonCompletion.user_id == user_id,
+            models.LessonCompletion.lesson_id == lesson_id,
+        )
+        .first()
+    )
+
+
+def get_user_lesson_completions(db: Session, user_id: int):
+    return (
+        db.query(models.LessonCompletion)
+        .filter(models.LessonCompletion.user_id == user_id)
+        .order_by(models.LessonCompletion.updated_at.desc())
+        .all()
+    )
+
+
+def _find_skill_for_course(db: Session, course: models.Course):
+    return db.query(models.SkillTrack).filter(models.SkillTrack.id == course.skill_id).first()
+
+
+def _find_scenario_for_skill(db: Session, skill_id: int):
+    return (
+        db.query(models.Scenario)
+        .filter(models.Scenario.skill_id == skill_id)
+        .order_by(models.Scenario.id.asc())
+        .first()
+    )
+
+
+def build_lesson_runtime(db: Session, lesson: models.Lesson, user_id: int | None = None):
+    module = get_module(db, lesson.module_id)
+    course = db.query(models.Course).filter(models.Course.id == module.course_id).first()
+    skill = _find_skill_for_course(db, course)
+    scenario = _find_scenario_for_skill(db, skill.id)
+    completion = get_lesson_completion(db, user_id, lesson.id) if user_id is not None else None
+
+    checklist = [
+        f"State the goal of {lesson.title.lower()} in plain language.",
+        f"List the correct sequence for {module.title.lower()}.",
+        f"Explain one quality or safety check relevant to {skill.title.lower()}.",
+    ]
+    rubric = [
+        "Uses the right sequence instead of generic advice.",
+        "Names the tool, concept, or control relevant to the lesson.",
+        "Ends with a safety, quality, or verification step.",
+    ]
+
+    return schemas.LessonRuntime(
+        skill=schemas.SkillTrack.model_validate(skill),
+        course=schemas.Course.model_validate(course),
+        module=schemas.Module.model_validate(module),
+        lesson=schemas.Lesson.model_validate(lesson),
+        scenario=schemas.Scenario.model_validate(scenario) if scenario else None,
+        checklist=checklist,
+        rubric=rubric,
+        prompt=(
+            f"You are performing {lesson.title.lower()} in the {skill.title.lower()} path. "
+            f"Describe the setup, the key execution steps, and the final verification."
+        ),
+        completion=schemas.LessonCompletion.model_validate(completion) if completion else None,
+    )
+
+
+def _keyword_score(reference_text: str, learner_answer: str):
+    keywords = {token for token in re.findall(r"[a-zA-Z]{5,}", reference_text.lower()) if token not in {"learners", "skillscape", "guided", "module"}}
+    if not keywords:
+        return 50
+    learner_tokens = set(re.findall(r"[a-zA-Z]{5,}", learner_answer.lower()))
+    hits = len(keywords.intersection(learner_tokens))
+    score = int(min(100, 35 + (hits * 12)))
+    return score
+
+
+def create_lesson_attempt(db: Session, lesson: models.Lesson, payload: schemas.LessonAttemptCreate):
+    runtime = build_lesson_runtime(db, lesson, payload.user_id)
+    reference = " ".join([lesson.objective, runtime.prompt, *(runtime.checklist)])
+    score = _keyword_score(reference, payload.answer)
+    feedback, _provider = generate_lesson_coach(runtime.skill.title, lesson.title, lesson.objective, payload.answer)
+
+    attempt = models.LessonAttempt(
+        user_id=payload.user_id,
+        lesson_id=lesson.id,
+        answer=payload.answer.strip(),
+        score=score,
+        feedback=feedback,
+    )
+    db.add(attempt)
+    db.commit()
+    db.refresh(attempt)
+    return attempt
+
+
+def upsert_lesson_completion(db: Session, lesson: models.Lesson, payload: schemas.LessonCompletionCreate):
+    completion = get_lesson_completion(db, payload.user_id, lesson.id)
+    if completion is None:
+        completion = models.LessonCompletion(
+            user_id=payload.user_id,
+            lesson_id=lesson.id,
+            status=payload.status,
+            score=payload.score,
+            feedback=payload.feedback,
+        )
+        db.add(completion)
+    else:
+        completion.status = payload.status
+        completion.score = payload.score
+        completion.feedback = payload.feedback
+
+    db.commit()
+    db.refresh(completion)
+    return completion
+
+
+def build_ai_coach_feedback(db: Session, lesson: models.Lesson, answer: str):
+    runtime = build_lesson_runtime(db, lesson)
+    feedback, provider = generate_lesson_coach(runtime.skill.title, lesson.title, lesson.objective, answer)
+    return schemas.AICoachResponse(feedback=feedback, provider=provider)
+
+
 def build_learner_dashboard(db: Session, user: models.User):
     activity = get_user_progress(db, user.id)
+    lesson_completions = get_user_lesson_completions(db, user.id)
     completed_sessions = sum(1 for item in activity if item.status == "Completed")
     in_progress_sessions = sum(1 for item in activity if item.status == "In progress")
+    completed_lessons = sum(1 for item in lesson_completions if item.status == "Completed")
+    active_lessons = sum(1 for item in lesson_completions if item.status != "Completed")
 
     return schemas.LearnerDashboard(
         user=build_user_profile(user),
         total_progress_entries=len(activity),
         completed_sessions=completed_sessions,
         in_progress_sessions=in_progress_sessions,
+        completed_lessons=completed_lessons,
+        active_lessons=active_lessons,
         recent_activity=[schemas.Progress.model_validate(item) for item in activity[:6]],
         recommended_skills=[schemas.SkillTrack.model_validate(item) for item in get_recommended_skills(db)],
         recommended_courses=[schemas.Course.model_validate(item) for item in get_recommended_courses(db)],
