@@ -16,6 +16,16 @@ The project is intentionally split into two parts:
 - `frontend/app.js`: Fetches backend data and initializes the Three.js preview.
 - `frontend/styles.css`: Design and responsive layout.
 
+## Skill Categories
+
+SkillScape is designed to support a wide range of practical learning domains, including:
+
+- Electrical work
+- Carpentry
+- Mechanical repair
+- Baking and food preparation
+- AI and technical workflow planning
+
 ## Local Setup
 
 ### Backend

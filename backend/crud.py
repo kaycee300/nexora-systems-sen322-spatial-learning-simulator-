@@ -27,10 +27,12 @@ def create_progress(db: Session, progress: schemas.ProgressCreate):
 
 
 def seed_scenarios(db: Session):
-    existing = db.query(models.Scenario).count()
-    if existing:
-        return
-    samples = [
+    sample_titles = {
+        record.title
+        for record in db.query(models.Scenario.title).all()
+    }
+    samples = []
+    new_scenarios = [
         models.Scenario(
             title="Electrical Wiring Basics",
             description="Inspect a virtual wall panel, identify wiring color codes, and trace circuit paths.",
@@ -49,6 +51,29 @@ def seed_scenarios(db: Session):
             tool="Pressure Gauge",
             difficulty="Advanced",
         ),
+        models.Scenario(
+            title="Baking Fundamentals",
+            description="Follow a virtual recipe, mix ingredients by weight, and observe dough texture and oven timing.",
+            tool="Digital Scale",
+            difficulty="Beginner",
+        ),
+        models.Scenario(
+            title="AI Workflow Planning",
+            description="Build a high-level AI solution by choosing datasets, model types, and evaluation metrics.",
+            tool="Planning Board",
+            difficulty="Intermediate",
+        ),
+        models.Scenario(
+            title="Creative Skills Simulation",
+            description="Explore how different vocational and knowledge skills like baking, AI, and design can be trained in simulation.",
+            tool="Virtual Toolkit",
+            difficulty="Intermediate",
+        ),
     ]
+    for scenario in new_scenarios:
+        if scenario.title not in sample_titles:
+            samples.append(scenario)
+    if not samples:
+        return
     db.add_all(samples)
     db.commit()
