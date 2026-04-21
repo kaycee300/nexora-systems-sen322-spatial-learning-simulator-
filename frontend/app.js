@@ -16,6 +16,44 @@ async function fetchScenarios() {
   return response.json();
 }
 
+async function fetchSkills() {
+  const response = await fetch(`${BACKEND_URL}/skills`);
+
+  if (!response.ok) {
+    throw new Error("Unable to load skill tracks from the backend.");
+  }
+
+  return response.json();
+}
+
+function renderSkills(skills) {
+  const listEl = document.getElementById("skill-list");
+  const countEl = document.getElementById("skill-count");
+
+  countEl.textContent = String(skills.length);
+  listEl.innerHTML = "";
+
+  if (!skills.length) {
+    listEl.innerHTML = "<div class=\"skill-card loading-card\">No skill tracks available.</div>";
+    return;
+  }
+
+  skills.forEach((skill) => {
+    const card = document.createElement("article");
+    card.className = "skill-card";
+    card.innerHTML = `
+      <h3>${skill.title}</h3>
+      <p>${skill.description}</p>
+      <div class="skill-meta">
+        <span>${skill.category}</span>
+        <span>${skill.difficulty}</span>
+        <span>Demand: ${skill.demand_level}</span>
+      </div>
+    `;
+    listEl.appendChild(card);
+  });
+}
+
 function updateSpotlight(scenario) {
   document.getElementById("spotlight-title").textContent = scenario.title;
   document.getElementById("spotlight-description").textContent = scenario.description;
@@ -249,9 +287,12 @@ window.addEventListener("DOMContentLoaded", async () => {
   initScene();
 
   try {
-    const scenarios = await fetchScenarios();
+    const [skills, scenarios] = await Promise.all([fetchSkills(), fetchScenarios()]);
+    renderSkills(skills);
     renderScenarios(scenarios);
   } catch (error) {
+    document.getElementById("skill-list").innerHTML =
+      `<div class="skill-card loading-card">${error.message}</div>`;
     renderScenarioError(error.message);
   }
 

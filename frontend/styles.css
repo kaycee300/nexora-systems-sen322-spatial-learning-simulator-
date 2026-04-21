@@ -242,6 +242,7 @@ h1 {
 
 .hero-metrics article,
 .studio-card,
+.skill-card,
 .scenario-item,
 .scenario-spotlight,
 .progress-panel,
@@ -390,6 +391,7 @@ h2 {
 }
 
 .section-heading,
+.skill-list,
 .scenario-layout,
 .progress-layout {
   display: grid;
@@ -405,6 +407,41 @@ h2 {
 .scenario-layout {
   grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
   align-items: start;
+}
+
+.skill-list {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.skill-card {
+  padding: 1.35rem;
+  border-radius: 1.4rem;
+}
+
+.skill-card h3 {
+  margin-bottom: 0.55rem;
+  font-size: 1.16rem;
+}
+
+.skill-card p {
+  color: var(--muted-strong);
+}
+
+.skill-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+
+.skill-meta span {
+  display: inline-flex;
+  padding: 0.42rem 0.72rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 247, 240, 0.06);
+  font-size: 0.83rem;
+  color: var(--muted-strong);
 }
 
 .scenario-spotlight {

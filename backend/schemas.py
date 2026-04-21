@@ -4,6 +4,7 @@ from pydantic import BaseModel, ConfigDict
 
 
 class ScenarioBase(BaseModel):
+    skill_id: int | None = None
     title: str
     description: str
     tool: str
@@ -13,6 +14,25 @@ class ScenarioBase(BaseModel):
 class Scenario(ScenarioBase):
     id: int
     model_config = ConfigDict(from_attributes=True)
+
+
+class SkillTrackBase(BaseModel):
+    slug: str
+    title: str
+    category: str
+    description: str
+    demand_level: str
+    difficulty: str
+    learning_path: str
+
+
+class SkillTrack(SkillTrackBase):
+    id: int
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SkillTrackDetail(SkillTrack):
+    scenarios: list[Scenario]
 
 
 class ProgressCreate(BaseModel):

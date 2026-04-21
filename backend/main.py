@@ -1,5 +1,6 @@
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
 
 try:
@@ -10,8 +11,6 @@ except ImportError:
     import models  # type: ignore
     import schemas  # type: ignore
     from database import SessionLocal, engine  # type: ignore
-
-models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="SkillScape API",
@@ -36,8 +35,31 @@ def get_db():
         db.close()
 
 
+def ensure_schema():
+    inspector = inspect(engine)
+
+    if not inspector.has_table("skill_tracks"):
+        models.SkillTrack.__table__.create(bind=engine)
+
+    if not inspector.has_table("scenarios"):
+        models.Scenario.__table__.create(bind=engine)
+
+    if not inspector.has_table("user_progress"):
+        models.UserProgress.__table__.create(bind=engine)
+
+    scenario_columns = {column["name"] for column in inspect(engine).get_columns("scenarios")}
+
+    if "skill_id" not in scenario_columns:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE scenarios ADD COLUMN skill_id INTEGER"))
+
+
+ensure_schema()
+
+
 @app.on_event("startup")
 async def startup_event():
+    ensure_schema()
     db = SessionLocal()
     try:
         crud.seed_scenarios(db)
@@ -53,6 +75,27 @@ async def health_check():
 @app.get("/scenarios", response_model=list[schemas.Scenario])
 async def read_scenarios(db: Session = Depends(get_db)):
     return crud.get_scenarios(db)
+
+
+@app.get("/skills", response_model=list[schemas.SkillTrack])
+async def read_skill_tracks(db: Session = Depends(get_db)):
+    return crud.get_skill_tracks(db)
+
+
+@app.get("/skills/{skill_id}", response_model=schemas.SkillTrackDetail)
+async def read_skill_track(skill_id: int, db: Session = Depends(get_db)):
+    skill = crud.get_skill_track(db, skill_id)
+    if skill is None:
+        raise HTTPException(status_code=404, detail="Skill track not found")
+    return crud.build_skill_track_detail(db, skill)
+
+
+@app.get("/skills/{skill_id}/scenarios", response_model=list[schemas.Scenario])
+async def read_skill_scenarios(skill_id: int, db: Session = Depends(get_db)):
+    skill = crud.get_skill_track(db, skill_id)
+    if skill is None:
+        raise HTTPException(status_code=404, detail="Skill track not found")
+    return crud.get_scenarios_for_skill(db, skill_id)
 
 
 @app.get("/scenarios/{scenario_id}", response_model=schemas.Scenario)

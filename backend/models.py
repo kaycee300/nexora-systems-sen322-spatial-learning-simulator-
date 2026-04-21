@@ -7,10 +7,24 @@ except ImportError:
     from database import Base  # type: ignore
 
 
+class SkillTrack(Base):
+    __tablename__ = "skill_tracks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    slug = Column(String, unique=True, index=True, nullable=False)
+    title = Column(String, unique=True, index=True, nullable=False)
+    category = Column(String, nullable=False)
+    description = Column(String, nullable=False)
+    demand_level = Column(String, nullable=False)
+    difficulty = Column(String, nullable=False)
+    learning_path = Column(String, nullable=False)
+
+
 class Scenario(Base):
     __tablename__ = "scenarios"
 
     id = Column(Integer, primary_key=True, index=True)
+    skill_id = Column(Integer, ForeignKey("skill_tracks.id"), nullable=True)
     title = Column(String, index=True, nullable=False)
     description = Column(String, nullable=False)
     tool = Column(String, nullable=False)
