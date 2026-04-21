@@ -39,16 +39,16 @@ def ensure_schema():
     inspector = inspect(engine)
 
     if not inspector.has_table("skill_tracks"):
-        models.SkillTrack.__table__.create(bind=engine)
+        models.SkillTrack.__table__.create(bind=engine, checkfirst=True)
 
     if not inspector.has_table("users"):
-        models.User.__table__.create(bind=engine)
+        models.User.__table__.create(bind=engine, checkfirst=True)
 
     if not inspector.has_table("scenarios"):
-        models.Scenario.__table__.create(bind=engine)
+        models.Scenario.__table__.create(bind=engine, checkfirst=True)
 
     if not inspector.has_table("user_progress"):
-        models.UserProgress.__table__.create(bind=engine)
+        models.UserProgress.__table__.create(bind=engine, checkfirst=True)
 
     scenario_columns = {column["name"] for column in inspect(engine).get_columns("scenarios")}
 

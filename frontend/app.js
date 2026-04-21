@@ -1,9 +1,37 @@
 const BACKEND_URL = "http://localhost:8000";
+const STORAGE_KEY = "skillscape-current-user";
 
-function setMessage(text, tone = "default") {
-  const messageEl = document.getElementById("progress-message");
+let currentUser = null;
+
+function setMessage(text, tone = "default", elementId = "progress-message") {
+  const messageEl = document.getElementById(elementId);
   messageEl.textContent = text;
   messageEl.style.color = tone === "error" ? "#ff9d8d" : tone === "success" ? "#ffd08b" : "#efceb0";
+}
+
+function saveCurrentUser(user) {
+  currentUser = user;
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+}
+
+function clearCurrentUser() {
+  currentUser = null;
+  window.localStorage.removeItem(STORAGE_KEY);
+}
+
+function loadCurrentUser() {
+  const raw = window.localStorage.getItem(STORAGE_KEY);
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    currentUser = JSON.parse(raw);
+    return currentUser;
+  } catch {
+    clearCurrentUser();
+    return null;
+  }
 }
 
 async function fetchScenarios() {
@@ -54,6 +82,126 @@ function renderSkills(skills) {
   });
 }
 
+async function registerUser(payload) {
+  const response = await fetch(`${BACKEND_URL}/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.detail || "Unable to create account.");
+  }
+  return data;
+}
+
+async function loginUser(payload) {
+  const response = await fetch(`${BACKEND_URL}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.detail || "Unable to login.");
+  }
+  return data;
+}
+
+async function fetchDashboard(userId) {
+  const response = await fetch(`${BACKEND_URL}/users/${userId}/dashboard`);
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || "Unable to load dashboard.");
+  }
+  return data;
+}
+
+function syncProgressIdentity() {
+  const studentNameInput = document.getElementById("student-name");
+
+  if (currentUser) {
+    studentNameInput.value = currentUser.name;
+    studentNameInput.disabled = true;
+    document.getElementById("logout-button").classList.remove("auth-hidden");
+  } else {
+    studentNameInput.disabled = false;
+    studentNameInput.value = "";
+    document.getElementById("logout-button").classList.add("auth-hidden");
+  }
+}
+
+function renderDashboardState(dashboard) {
+  document.getElementById("dashboard-title").textContent = `Welcome back, ${dashboard.user.name}`;
+  document.getElementById("dashboard-subtitle").textContent =
+    dashboard.user.learning_goal || "Your learning profile is active. Pick a scenario and keep building momentum.";
+  document.getElementById("dashboard-total").textContent = String(dashboard.total_progress_entries);
+  document.getElementById("dashboard-completed").textContent = String(dashboard.completed_sessions);
+  document.getElementById("dashboard-active").textContent = String(dashboard.in_progress_sessions);
+
+  const activityEl = document.getElementById("dashboard-activity");
+  activityEl.innerHTML = "";
+  if (!dashboard.recent_activity.length) {
+    activityEl.innerHTML = "<div class=\"dashboard-item empty-state\">No progress entries yet. Save your first session to populate this list.</div>";
+  } else {
+    dashboard.recent_activity.forEach((item) => {
+      const card = document.createElement("div");
+      card.className = "dashboard-item";
+      card.innerHTML = `
+        <strong>${item.student_name}</strong>
+        <p>Scenario ID: ${item.scenario_id}</p>
+        <span>${item.status}</span>
+      `;
+      activityEl.appendChild(card);
+    });
+  }
+
+  const recommendationsEl = document.getElementById("dashboard-recommendations");
+  recommendationsEl.innerHTML = "";
+  dashboard.recommended_skills.forEach((skill) => {
+    const card = document.createElement("div");
+    card.className = "dashboard-item";
+    card.innerHTML = `
+      <strong>${skill.title}</strong>
+      <p>${skill.category}</p>
+      <span>${skill.difficulty}</span>
+    `;
+    recommendationsEl.appendChild(card);
+  });
+}
+
+function renderLoggedOutDashboard() {
+  document.getElementById("dashboard-title").textContent = "Sign in to unlock your dashboard";
+  document.getElementById("dashboard-subtitle").textContent =
+    "Accounts are now supported. Once you log in, your recent sessions and recommended skills will appear here.";
+  document.getElementById("dashboard-total").textContent = "0";
+  document.getElementById("dashboard-completed").textContent = "0";
+  document.getElementById("dashboard-active").textContent = "0";
+  document.getElementById("dashboard-activity").innerHTML =
+    "<div class=\"dashboard-item empty-state\">No learner data yet.</div>";
+  document.getElementById("dashboard-recommendations").innerHTML =
+    "<div class=\"dashboard-item empty-state\">Your recommended tracks will appear here after login.</div>";
+}
+
+async function refreshDashboard() {
+  syncProgressIdentity();
+
+  if (!currentUser) {
+    renderLoggedOutDashboard();
+    return;
+  }
+
+  try {
+    const dashboard = await fetchDashboard(currentUser.id);
+    renderDashboardState(dashboard);
+  } catch (error) {
+    setMessage(error.message, "error", "auth-message");
+  }
+}
+
 function updateSpotlight(scenario) {
   document.getElementById("spotlight-title").textContent = scenario.title;
   document.getElementById("spotlight-description").textContent = scenario.description;
@@ -66,9 +214,6 @@ function updateSpotlight(scenario) {
 
 function renderScenarios(scenarios) {
   const listEl = document.getElementById("scenario-list");
-  const countEl = document.getElementById("scenario-count");
-
-  countEl.textContent = String(scenarios.length);
   listEl.innerHTML = "";
 
   if (!scenarios.length) {
@@ -260,7 +405,8 @@ async function submitProgress(event) {
   setMessage("Saving progress...");
 
   const payload = {
-    student_name: document.getElementById("student-name").value.trim(),
+    user_id: currentUser ? currentUser.id : null,
+    student_name: document.getElementById("student-name").value.trim() || null,
     scenario_id: Number(document.getElementById("scenario-id").value),
     status: document.getElementById("progress-status").value,
   };
@@ -278,13 +424,64 @@ async function submitProgress(event) {
     }
 
     setMessage("Progress saved successfully.", "success");
+    if (currentUser) {
+      await refreshDashboard();
+    }
   } catch (error) {
     setMessage(error.message, "error");
   }
 }
 
+async function handleRegister(event) {
+  event.preventDefault();
+  setMessage("Creating account...", "default", "auth-message");
+
+  try {
+    const response = await registerUser({
+      name: document.getElementById("register-name").value.trim(),
+      email: document.getElementById("register-email").value.trim(),
+      password: document.getElementById("register-password").value,
+      learning_goal: document.getElementById("register-goal").value.trim() || null,
+    });
+    saveCurrentUser(response.user);
+    setMessage("Account created and signed in.", "success", "auth-message");
+    document.getElementById("register-form").reset();
+    await refreshDashboard();
+  } catch (error) {
+    setMessage(error.message, "error", "auth-message");
+  }
+}
+
+async function handleLogin(event) {
+  event.preventDefault();
+  setMessage("Logging in...", "default", "auth-message");
+
+  try {
+    const response = await loginUser({
+      email: document.getElementById("login-email").value.trim(),
+      password: document.getElementById("login-password").value,
+    });
+    saveCurrentUser(response.user);
+    setMessage("Login successful.", "success", "auth-message");
+    document.getElementById("login-form").reset();
+    await refreshDashboard();
+  } catch (error) {
+    setMessage(error.message, "error", "auth-message");
+  }
+}
+
+function handleLogout() {
+  clearCurrentUser();
+  syncProgressIdentity();
+  renderLoggedOutDashboard();
+  setMessage("Logged out.", "default", "auth-message");
+}
+
 window.addEventListener("DOMContentLoaded", async () => {
   initScene();
+  loadCurrentUser();
+  syncProgressIdentity();
+  renderLoggedOutDashboard();
 
   try {
     const [skills, scenarios] = await Promise.all([fetchSkills(), fetchScenarios()]);
@@ -296,5 +493,12 @@ window.addEventListener("DOMContentLoaded", async () => {
     renderScenarioError(error.message);
   }
 
+  if (currentUser) {
+    await refreshDashboard();
+  }
+
+  document.getElementById("register-form").addEventListener("submit", handleRegister);
+  document.getElementById("login-form").addEventListener("submit", handleLogin);
+  document.getElementById("logout-button").addEventListener("click", handleLogout);
   document.getElementById("progress-form").addEventListener("submit", submitProgress);
 });

@@ -245,6 +245,7 @@ h1 {
 .skill-card,
 .scenario-item,
 .scenario-spotlight,
+.dashboard-metrics article,
 .progress-panel,
 .progress-notes article {
   border: 1px solid var(--line);
@@ -393,6 +394,8 @@ h2 {
 .section-heading,
 .skill-list,
 .scenario-layout,
+.auth-layout,
+.dashboard-layout,
 .progress-layout {
   display: grid;
   gap: 1.5rem;
@@ -533,6 +536,85 @@ h2 {
   align-items: start;
 }
 
+.auth-layout {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 1.5rem;
+}
+
+.auth-panel-header,
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: start;
+  margin-bottom: 1rem;
+}
+
+.dashboard-shell {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.dashboard-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.dashboard-metrics article {
+  padding: 1.2rem;
+  border-radius: 1.2rem;
+}
+
+.dashboard-metrics strong {
+  display: block;
+  font-size: 1.7rem;
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.dashboard-metrics span {
+  color: var(--muted);
+}
+
+.dashboard-layout {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dashboard-list {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.dashboard-item {
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: rgba(255, 247, 240, 0.04);
+}
+
+.dashboard-item strong {
+  display: block;
+  margin-bottom: 0.3rem;
+}
+
+.dashboard-item span {
+  display: inline-flex;
+  margin-top: 0.65rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--muted-strong);
+  font-size: 0.82rem;
+}
+
+.empty-state {
+  color: var(--muted);
+}
+
+.auth-hidden {
+  display: none;
+}
+
 .progress-panel,
 .progress-notes article {
   border-radius: var(--radius-lg);
@@ -624,6 +706,8 @@ h2 {
 @media (max-width: 1024px) {
   .hero,
   .scenario-layout,
+  .auth-layout,
+  .dashboard-layout,
   .progress-layout,
   .section-heading,
   .studio-grid {
@@ -655,6 +739,7 @@ h2 {
   }
 
   .hero-metrics,
+  .dashboard-metrics,
   .scene-overlay {
     grid-template-columns: 1fr;
   }

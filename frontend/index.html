@@ -33,6 +33,7 @@
       <nav class="site-nav" aria-label="Primary">
         <a href="#capabilities">Capabilities</a>
         <a href="#scenarios">Scenarios</a>
+        <a href="#dashboard">Dashboard</a>
         <a href="#progress">Progress</a>
       </nav>
     </header>
@@ -156,6 +157,117 @@
 
           <div id="scenario-list" class="scenario-list" aria-live="polite">
             <div class="scenario-item loading-card">Loading scenarios from the backend...</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section progress-section reveal" id="dashboard">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">Learner access</p>
+            <h2>Create an account and keep your training history.</h2>
+          </div>
+          <p class="section-summary">
+            This phase adds learner accounts, persistent progress, and a starter dashboard
+            so SkillScape behaves more like a platform than a static showcase.
+          </p>
+        </div>
+
+        <div class="auth-layout">
+          <div class="progress-panel">
+            <div class="auth-panel-header">
+              <div>
+                <p class="note-label">Register</p>
+                <h3>Start a learner profile</h3>
+              </div>
+            </div>
+
+            <form id="register-form" class="progress-form">
+              <label>
+                Full name
+                <input type="text" id="register-name" placeholder="e.g. Debbie Okafor" required />
+              </label>
+              <label>
+                Email
+                <input type="email" id="register-email" placeholder="you@example.com" required />
+              </label>
+              <label>
+                Password
+                <input type="password" id="register-password" placeholder="Create a password" required />
+              </label>
+              <label>
+                Learning goal
+                <input type="text" id="register-goal" placeholder="e.g. Learn electrical installation and device repair" />
+              </label>
+              <button type="submit" class="btn btn-primary btn-block">Create account</button>
+            </form>
+          </div>
+
+          <div class="progress-panel">
+            <div class="auth-panel-header">
+              <div>
+                <p class="note-label">Login</p>
+                <h3>Return to your workspace</h3>
+              </div>
+            </div>
+
+            <form id="login-form" class="progress-form">
+              <label>
+                Email
+                <input type="email" id="login-email" placeholder="you@example.com" required />
+              </label>
+              <label>
+                Password
+                <input type="password" id="login-password" placeholder="Your password" required />
+              </label>
+              <button type="submit" class="btn btn-secondary btn-block">Login</button>
+            </form>
+
+            <p id="auth-message" class="message" aria-live="polite"></p>
+          </div>
+        </div>
+
+        <div class="dashboard-shell">
+          <div class="dashboard-header">
+            <div>
+              <p class="note-label">Learner dashboard</p>
+              <h3 id="dashboard-title">Sign in to unlock your dashboard</h3>
+              <p id="dashboard-subtitle" class="section-summary">
+                Accounts are now supported. Once you log in, your recent sessions and recommended skills will appear here.
+              </p>
+            </div>
+            <button type="button" id="logout-button" class="btn btn-secondary auth-hidden">Log out</button>
+          </div>
+
+          <div class="dashboard-metrics">
+            <article>
+              <strong id="dashboard-total">0</strong>
+              <span>Total sessions</span>
+            </article>
+            <article>
+              <strong id="dashboard-completed">0</strong>
+              <span>Completed</span>
+            </article>
+            <article>
+              <strong id="dashboard-active">0</strong>
+              <span>In progress</span>
+            </article>
+          </div>
+
+          <div class="dashboard-layout">
+            <div class="progress-panel">
+              <p class="note-label">Recent activity</p>
+              <div id="dashboard-activity" class="dashboard-list">
+                <div class="dashboard-item empty-state">No learner data yet.</div>
+              </div>
+            </div>
+
+            <div class="progress-panel">
+              <p class="note-label">Recommended skills</p>
+              <div id="dashboard-recommendations" class="dashboard-list">
+                <div class="dashboard-item empty-state">Your recommended tracks will appear here after login.</div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
