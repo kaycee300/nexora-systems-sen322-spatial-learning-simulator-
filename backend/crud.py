@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
-from backend import models, schemas
+
+from . import models, schemas
 
 
 def get_scenarios(db: Session):
