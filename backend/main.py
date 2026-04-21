@@ -1,6 +1,7 @@
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import inspect, text
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 try:
@@ -36,21 +37,25 @@ def get_db():
 
 
 def ensure_schema():
-    models.Base.metadata.create_all(
-        bind=engine,
-        tables=[
-            models.SkillTrack.__table__,
-            models.User.__table__,
-            models.Scenario.__table__,
-            models.Course.__table__,
-            models.Module.__table__,
-            models.Lesson.__table__,
-            models.LessonCompletion.__table__,
-            models.LessonAttempt.__table__,
-            models.UserProgress.__table__,
-        ],
-        checkfirst=True,
-    )
+    try:
+        models.Base.metadata.create_all(
+            bind=engine,
+            tables=[
+                models.SkillTrack.__table__,
+                models.User.__table__,
+                models.Scenario.__table__,
+                models.Course.__table__,
+                models.Module.__table__,
+                models.Lesson.__table__,
+                models.LessonCompletion.__table__,
+                models.LessonAttempt.__table__,
+                models.UserProgress.__table__,
+            ],
+            checkfirst=True,
+        )
+    except OperationalError as exc:
+        if "already exists" not in str(exc):
+            raise
 
     inspector = inspect(engine)
 

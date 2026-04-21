@@ -2,6 +2,7 @@ const BACKEND_URL = "http://localhost:8000";
 const STORAGE_KEY = "skillscape-current-user";
 
 let currentUser = null;
+let currentLessonRuntime = null;
 
 function setMessage(text, tone = "default", elementId = "progress-message") {
   const messageEl = document.getElementById(elementId);
@@ -65,6 +66,97 @@ async function fetchSkillCourse(skillId) {
   return data;
 }
 
+async function fetchLessonRuntime(lessonId) {
+  const query = currentUser ? `?user_id=${currentUser.id}` : "";
+  const response = await fetch(`${BACKEND_URL}/lessons/${lessonId}/runtime${query}`);
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || "Unable to load lesson runtime.");
+  }
+
+  return data;
+}
+
+async function askAICoach(payload) {
+  const response = await fetch(`${BACKEND_URL}/ai/coach`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || "Unable to get AI coaching.");
+  }
+
+  return data;
+}
+
+async function submitLessonAttempt(payload) {
+  const response = await fetch(`${BACKEND_URL}/lessons/${payload.lesson_id}/attempt`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      user_id: payload.user_id,
+      answer: payload.answer,
+    }),
+  });
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || "Unable to submit lesson attempt.");
+  }
+
+  return data;
+}
+
+async function saveLessonCompletion(payload) {
+  const response = await fetch(`${BACKEND_URL}/lessons/${payload.lesson_id}/complete`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      user_id: payload.user_id,
+      status: payload.status,
+      score: payload.score,
+      feedback: payload.feedback,
+    }),
+  });
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || "Unable to update lesson completion.");
+  }
+
+  return data;
+}
+
+function renderLessonRuntime(runtime) {
+  currentLessonRuntime = runtime;
+  document.getElementById("runtime-lesson-title").textContent = runtime.lesson.title;
+  document.getElementById("runtime-lesson-context").textContent =
+    `${runtime.skill.title} • ${runtime.course.title} • ${runtime.module.title}`;
+  document.getElementById("runtime-skill-pill").textContent = runtime.skill.title;
+  document.getElementById("runtime-module-pill").textContent = runtime.module.title;
+  document.getElementById("runtime-status-pill").textContent =
+    `Status: ${runtime.completion ? runtime.completion.status : "not started"}`;
+  document.getElementById("runtime-prompt").textContent = runtime.prompt;
+
+  const checklistEl = document.getElementById("runtime-checklist");
+  checklistEl.innerHTML = runtime.checklist.map((item) => `<li>${item}</li>`).join("");
+
+  const rubricEl = document.getElementById("runtime-rubric");
+  rubricEl.innerHTML = runtime.rubric.map((item) => `<li>${item}</li>`).join("");
+
+  document.getElementById("lesson-answer").value = "";
+  document.getElementById("lesson-attempt-message").textContent = "";
+  document.getElementById("lesson-completion-message").textContent = "";
+
+  const coachEl = document.getElementById("ai-coach-response");
+  coachEl.textContent = runtime.completion?.feedback
+    || "Ask the AI coach for feedback or submit an assessment to generate lesson feedback.";
+}
+
 function renderCourse(course) {
   document.getElementById("course-title").textContent = course.title;
   document.getElementById("course-summary").textContent = course.summary;
@@ -82,11 +174,11 @@ function renderCourse(course) {
     const lessonMarkup = module.lessons
       .map(
         (lesson) => `
-          <div class="lesson-card">
+          <button type="button" class="lesson-card lesson-launch" data-lesson-id="${lesson.id}">
             <strong>${lesson.position}. ${lesson.title}</strong>
             <p>${lesson.objective}</p>
             <span>${lesson.format} • ${lesson.duration_minutes} min</span>
-          </div>
+          </button>
         `
       )
       .join("");
@@ -98,6 +190,18 @@ function renderCourse(course) {
       <div class="lesson-list">${lessonMarkup}</div>
     `;
     moduleList.appendChild(moduleCard);
+  });
+
+  document.querySelectorAll(".lesson-launch").forEach((button) => {
+    button.addEventListener("click", async () => {
+      try {
+        const runtime = await fetchLessonRuntime(Number(button.dataset.lessonId));
+        renderLessonRuntime(runtime);
+        window.location.hash = "lesson-runtime";
+      } catch (error) {
+        setMessage(error.message, "error", "lesson-attempt-message");
+      }
+    });
   });
 }
 
@@ -200,7 +304,7 @@ function renderDashboardState(dashboard) {
     dashboard.user.learning_goal || "Your learning profile is active. Pick a scenario and keep building momentum.";
   document.getElementById("dashboard-total").textContent = String(dashboard.total_progress_entries);
   document.getElementById("dashboard-completed").textContent = String(dashboard.completed_sessions);
-  document.getElementById("dashboard-active").textContent = String(dashboard.in_progress_sessions);
+  document.getElementById("dashboard-active").textContent = String(dashboard.active_lessons || dashboard.in_progress_sessions);
 
   const activityEl = document.getElementById("dashboard-activity");
   activityEl.innerHTML = "";
@@ -261,6 +365,14 @@ function renderLoggedOutDashboard() {
     "<div class=\"dashboard-item empty-state\">Your recommended tracks will appear here after login.</div>";
   document.getElementById("dashboard-courses").innerHTML =
     "<div class=\"dashboard-item empty-state\">Your recommended courses will appear here after login.</div>";
+}
+
+function requireSignedInForLessonAction() {
+  if (currentUser) {
+    return true;
+  }
+  setMessage("Sign in to run lesson assessments and completion tracking.", "error", "lesson-attempt-message");
+  return false;
 }
 
 async function refreshDashboard() {
@@ -509,6 +621,90 @@ async function submitProgress(event) {
   }
 }
 
+async function handleAskAICoach() {
+  if (!currentLessonRuntime) {
+    setMessage("Select a lesson first.", "error", "lesson-attempt-message");
+    return;
+  }
+
+  const answer = document.getElementById("lesson-answer").value.trim();
+  if (!answer) {
+    setMessage("Write an answer before asking the AI coach.", "error", "lesson-attempt-message");
+    return;
+  }
+
+  setMessage("Getting coaching feedback...", "default", "lesson-attempt-message");
+
+  try {
+    const response = await askAICoach({
+      user_id: currentUser ? currentUser.id : null,
+      lesson_id: currentLessonRuntime.lesson.id,
+      answer,
+    });
+    document.getElementById("ai-coach-response").textContent =
+      `${response.feedback} (${response.provider})`;
+    setMessage("AI coach feedback ready.", "success", "lesson-attempt-message");
+  } catch (error) {
+    setMessage(error.message, "error", "lesson-attempt-message");
+  }
+}
+
+async function handleSubmitLessonAttempt() {
+  if (!requireSignedInForLessonAction()) {
+    return;
+  }
+  if (!currentLessonRuntime) {
+    setMessage("Select a lesson first.", "error", "lesson-attempt-message");
+    return;
+  }
+
+  const answer = document.getElementById("lesson-answer").value.trim();
+  if (!answer) {
+    setMessage("Write an answer before submitting the assessment.", "error", "lesson-attempt-message");
+    return;
+  }
+
+  setMessage("Submitting assessment...", "default", "lesson-attempt-message");
+
+  try {
+    const attempt = await submitLessonAttempt({
+      lesson_id: currentLessonRuntime.lesson.id,
+      user_id: currentUser.id,
+      answer,
+    });
+    document.getElementById("ai-coach-response").textContent = attempt.feedback;
+    setMessage(`Assessment scored ${attempt.score}/100.`, "success", "lesson-attempt-message");
+  } catch (error) {
+    setMessage(error.message, "error", "lesson-attempt-message");
+  }
+}
+
+async function updateLessonCompletion(status) {
+  if (!requireSignedInForLessonAction()) {
+    return;
+  }
+  if (!currentLessonRuntime) {
+    setMessage("Select a lesson first.", "error", "lesson-completion-message");
+    return;
+  }
+
+  try {
+    const completion = await saveLessonCompletion({
+      lesson_id: currentLessonRuntime.lesson.id,
+      user_id: currentUser.id,
+      status,
+      feedback: document.getElementById("ai-coach-response").textContent,
+      score: status === "Completed" ? 100 : null,
+    });
+    currentLessonRuntime.completion = completion;
+    document.getElementById("runtime-status-pill").textContent = `Status: ${completion.status}`;
+    setMessage(`Lesson marked ${completion.status.toLowerCase()}.`, "success", "lesson-completion-message");
+    await refreshDashboard();
+  } catch (error) {
+    setMessage(error.message, "error", "lesson-completion-message");
+  }
+}
+
 async function handleRegister(event) {
   event.preventDefault();
   setMessage("Creating account...", "default", "auth-message");
@@ -583,5 +779,9 @@ window.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("register-form").addEventListener("submit", handleRegister);
   document.getElementById("login-form").addEventListener("submit", handleLogin);
   document.getElementById("logout-button").addEventListener("click", handleLogout);
+  document.getElementById("ask-ai-button").addEventListener("click", handleAskAICoach);
+  document.getElementById("submit-attempt-button").addEventListener("click", handleSubmitLessonAttempt);
+  document.getElementById("complete-lesson-button").addEventListener("click", () => updateLessonCompletion("Completed"));
+  document.getElementById("start-lesson-button").addEventListener("click", () => updateLessonCompletion("In progress"));
   document.getElementById("progress-form").addEventListener("submit", submitProgress);
 });

@@ -396,6 +396,7 @@ h2 {
 .scenario-layout,
 .auth-layout,
 .dashboard-layout,
+.runtime-layout,
 .progress-layout {
   display: grid;
   gap: 1.5rem;
@@ -545,6 +546,11 @@ h2 {
   align-items: start;
 }
 
+.runtime-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.9fr);
+  align-items: start;
+}
+
 .auth-layout {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-bottom: 1.5rem;
@@ -592,6 +598,39 @@ h2 {
 .dashboard-list {
   display: grid;
   gap: 0.8rem;
+}
+
+.runtime-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.runtime-block {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.runtime-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--muted-strong);
+}
+
+.runtime-textarea {
+  min-height: 190px;
+  width: 100%;
+  padding: 1rem;
+  border-radius: 1rem;
+  border: 1px solid var(--line);
+  background: rgba(255, 248, 241, 0.05);
+  color: var(--text);
+  resize: vertical;
+}
+
+.runtime-actions {
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
 }
 
 .course-module-list {

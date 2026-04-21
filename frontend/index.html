@@ -34,6 +34,7 @@
         <a href="#capabilities">Capabilities</a>
         <a href="#scenarios">Scenarios</a>
         <a href="#learning-paths">Learning Paths</a>
+        <a href="#lesson-runtime">Lesson Runtime</a>
         <a href="#dashboard">Dashboard</a>
         <a href="#progress">Progress</a>
       </nav>
@@ -188,6 +189,79 @@
 
           <div id="course-module-list" class="course-module-list" aria-live="polite">
             <div class="progress-panel loading-card">Loading modules and lessons...</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section progress-section reveal" id="lesson-runtime">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">Lesson runtime</p>
+            <h2>Run a lesson, get coached, and complete it.</h2>
+          </div>
+          <p class="section-summary">
+            This workspace turns curriculum into action. Select a lesson from any module,
+            respond to the assessment prompt, use the AI coach for feedback, and mark the lesson complete.
+          </p>
+        </div>
+
+        <div class="runtime-layout">
+          <div class="progress-panel runtime-panel">
+            <p class="note-label">Current lesson</p>
+            <h3 id="runtime-lesson-title">Choose a lesson to begin</h3>
+            <p id="runtime-lesson-context" class="section-summary">
+              The active lesson details will appear here when you select one from the learning path above.
+            </p>
+            <div class="spotlight-meta">
+              <span id="runtime-skill-pill">Skill pending</span>
+              <span id="runtime-module-pill">Module pending</span>
+              <span id="runtime-status-pill">Status: not started</span>
+            </div>
+
+            <div class="runtime-block">
+              <p class="note-label">Checklist</p>
+              <ul id="runtime-checklist" class="runtime-list">
+                <li>Select a lesson to load the runtime checklist.</li>
+              </ul>
+            </div>
+
+            <div class="runtime-block">
+              <p class="note-label">Assessment prompt</p>
+              <p id="runtime-prompt">Your assessment prompt will appear here.</p>
+            </div>
+
+            <div class="runtime-block">
+              <p class="note-label">Rubric</p>
+              <ul id="runtime-rubric" class="runtime-list">
+                <li>The scoring rubric will load with the lesson.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="progress-panel runtime-panel">
+            <p class="note-label">Lesson answer</p>
+            <textarea id="lesson-answer" class="runtime-textarea" placeholder="Write how you would approach the task, the execution sequence, and the final verification."></textarea>
+            <div class="runtime-actions">
+              <button type="button" id="ask-ai-button" class="btn btn-secondary">Ask AI coach</button>
+              <button type="button" id="submit-attempt-button" class="btn btn-primary">Submit assessment</button>
+            </div>
+            <p id="lesson-attempt-message" class="message" aria-live="polite"></p>
+
+            <div class="runtime-block">
+              <p class="note-label">AI coach</p>
+              <div id="ai-coach-response" class="dashboard-item empty-state">
+                The coaching panel will return guidance here. If no OpenAI API key is configured, SkillScape falls back to built-in coaching hints.
+              </div>
+            </div>
+
+            <div class="runtime-block">
+              <p class="note-label">Completion</p>
+              <div class="runtime-actions">
+                <button type="button" id="complete-lesson-button" class="btn btn-primary">Mark lesson complete</button>
+                <button type="button" id="start-lesson-button" class="btn btn-secondary">Set in progress</button>
+              </div>
+              <p id="lesson-completion-message" class="message" aria-live="polite"></p>
+            </div>
           </div>
         </div>
       </section>
