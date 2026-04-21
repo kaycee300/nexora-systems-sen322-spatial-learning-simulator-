@@ -38,19 +38,3 @@ For a simple local server:
 ```bash
 cd frontend
 python3 -m http.server 3000
-```
-
-Then open `http://localhost:3000`.
-
-## API Endpoints
-
-- `GET /scenarios` — list sample training scenarios.
-- `GET /scenarios/{id}` — get scenario details.
-- `POST /progress` — save student progress.
-- `GET /progress` — list saved progress records.
-
-## Notes
-
-- The backend uses SQLite (`skillscape.db`) in the `backend/` folder.
-- The frontend is intentionally separated so we can develop both in parallel.
-- This scaffold supports extending the simulator with real 3D training content and scenario workflows.
