@@ -6,13 +6,30 @@ let currentLessonRuntime = null;
 let currentLessonSession = null;
 let lessonSimulation = null;
 let simulationState = null;
-
-const ELECTRICAL_ACTIONS = [
-  "inspect_panel",
-  "pick_multimeter",
-  "identify_live_wire",
-  "secure_circuit",
-];
+const SIMULATION_BLUEPRINTS = {
+  "electrical-installation": {
+    label: "Playable simulation: electrical wiring",
+    instructions: [
+      { action: "inspect_panel", label: "Inspect panel" },
+      { action: "pick_multimeter", label: "Pick multimeter" },
+      { action: "identify_live_wire", label: "Identify live wire" },
+      { action: "secure_circuit", label: "Secure circuit" },
+    ],
+    initialMessage: "Start the lesson session, then click the panel to inspect it.",
+    wrongOrderMessage: "Wrong order. Inspect first, then use the right tool before isolating the live wire.",
+  },
+  "plumbing-systems": {
+    label: "Playable simulation: sink leak repair",
+    instructions: [
+      { action: "inspect_sink", label: "Inspect sink trap" },
+      { action: "pick_wrench", label: "Pick pipe wrench" },
+      { action: "tighten_trap", label: "Tighten trap joint" },
+      { action: "test_leak", label: "Run leak test" },
+    ],
+    initialMessage: "Start the lesson session, then inspect the sink trap first.",
+    wrongOrderMessage: "Wrong order. Inspect the leak source first, then select the right tool before tightening and testing.",
+  },
+};
 
 function setMessage(text, tone = "default", elementId = "progress-message") {
   const messageEl = document.getElementById(elementId);
@@ -200,10 +217,14 @@ function createInitialSimulationState() {
     score: 0,
     message: "Start the lesson session, then inspect the panel first.",
     panelInspected: false,
+    sinkInspected: false,
     toolPicked: false,
     wireIdentified: false,
     circuitSecured: false,
+    trapTightened: false,
+    leakTested: false,
     mistakes: 0,
+    eventLog: [],
   };
 }
 
@@ -213,10 +234,49 @@ function setSimulationMessage(text, tone = "default") {
   el.style.color = tone === "error" ? "#ff9d8d" : tone === "success" ? "#ffd08b" : "#efceb0";
 }
 
-function syncSimulationButtons() {
-  document.querySelectorAll(".simulation-action").forEach((button) => {
-    button.classList.toggle("is-complete", simulationState.actions.includes(button.dataset.action));
-  });
+function getSimulationBlueprint(skillSlug) {
+  return SIMULATION_BLUEPRINTS[skillSlug] || null;
+}
+
+function renderSimulationHints() {
+  const hintsEl = document.getElementById("simulation-hints");
+  const blueprint = getSimulationBlueprint(currentLessonRuntime?.skill?.slug);
+
+  if (!blueprint) {
+    hintsEl.innerHTML = "<span class=\"simulation-hint\">Interactive canvas gameplay is currently available for Electrical Installation and Plumbing Systems.</span>";
+    return;
+  }
+
+  hintsEl.innerHTML = blueprint.instructions
+    .map((item) => {
+      const isComplete = simulationState?.actions.includes(item.action);
+      return `<span class="simulation-hint${isComplete ? " is-complete" : ""}">${item.label}</span>`;
+    })
+    .join("");
+}
+
+function renderSimulationEventFeed() {
+  const feed = document.getElementById("simulation-event-feed");
+  if (!simulationState?.eventLog?.length) {
+    feed.innerHTML = "<div class=\"dashboard-item empty-state\">Simulation events will appear here as you interact with the canvas.</div>";
+    return;
+  }
+
+  feed.innerHTML = simulationState.eventLog
+    .slice(-5)
+    .reverse()
+    .map((entry) => `
+      <div class="dashboard-item">
+        <strong>${entry.title}</strong>
+        <p>${entry.detail}</p>
+      </div>
+    `)
+    .join("");
+}
+
+function syncSimulationUI() {
+  renderSimulationHints();
+  renderSimulationEventFeed();
   document.getElementById("runtime-score-pill").textContent = `Score: ${simulationState.score}`;
 }
 
@@ -244,51 +304,10 @@ function buildSimulationScene() {
   );
   stage.position.y = -1.8;
   scene.add(stage);
-
-  const board = new THREE.Mesh(
-    new THREE.BoxGeometry(4.1, 2.7, 0.22),
-    new THREE.MeshStandardMaterial({ color: 0x2d241f, metalness: 0.08, roughness: 0.82 }),
-  );
-  board.position.set(0, 0, 0);
-  scene.add(board);
-
-  const wireLive = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.08, 0.08, 2.6, 24),
-    new THREE.MeshStandardMaterial({ color: 0x4f4f4f, emissive: 0x111111 }),
-  );
-  wireLive.rotation.z = Math.PI / 2;
-  wireLive.position.set(0, 0.6, 0.2);
-  scene.add(wireLive);
-
-  const wireNeutral = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.08, 0.08, 2.6, 24),
-    new THREE.MeshStandardMaterial({ color: 0x4f4f4f, emissive: 0x111111 }),
-  );
-  wireNeutral.rotation.z = Math.PI / 2;
-  wireNeutral.position.set(0, 0, 0.2);
-  scene.add(wireNeutral);
-
-  const wireGround = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.08, 0.08, 2.6, 24),
-    new THREE.MeshStandardMaterial({ color: 0x4f4f4f, emissive: 0x111111 }),
-  );
-  wireGround.rotation.z = Math.PI / 2;
-  wireGround.position.set(0, -0.6, 0.2);
-  scene.add(wireGround);
-
-  const meter = new THREE.Mesh(
-    new THREE.BoxGeometry(0.85, 1.2, 0.35),
-    new THREE.MeshStandardMaterial({ color: 0x1f3d49, emissive: 0x092028, metalness: 0.32, roughness: 0.35 }),
-  );
-  meter.position.set(-2.25, -0.25, 0.55);
-  scene.add(meter);
-
-  const lamp = new THREE.Mesh(
-    new THREE.SphereGeometry(0.28, 24, 24),
-    new THREE.MeshStandardMaterial({ color: 0xffd78f, emissive: 0x4f3310, metalness: 0.15, roughness: 0.3 }),
-  );
-  lamp.position.set(1.5, 1.0, 0.6);
-  scene.add(lamp);
+  const root = new THREE.Group();
+  scene.add(root);
+  const raycaster = new THREE.Raycaster();
+  const pointer = new THREE.Vector2();
 
   function resize() {
     const { clientWidth, clientHeight } = canvas;
@@ -301,18 +320,218 @@ function buildSimulationScene() {
   resize();
   window.addEventListener("resize", resize);
 
+  canvas.addEventListener("pointermove", (event) => {
+    const rect = canvas.getBoundingClientRect();
+    pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    pointer.y = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
+  });
+
+  canvas.addEventListener("click", () => {
+    if (!lessonSimulation?.interactive?.length) {
+      return;
+    }
+    raycaster.setFromCamera(pointer, camera);
+    const hits = raycaster.intersectObjects(lessonSimulation.interactive, false);
+    const clicked = hits[0]?.object;
+    if (clicked?.userData?.action) {
+      runSimulationAction(clicked.userData.action);
+    }
+  });
+
   const clock = new THREE.Clock();
   function animate() {
     const elapsed = clock.getElapsedTime();
-    board.rotation.y = Math.sin(elapsed * 0.5) * 0.06;
-    lamp.scale.setScalar(1 + Math.sin(elapsed * 2.4) * 0.03 + (simulationState?.circuitSecured ? 0.08 : 0));
+
+    if (lessonSimulation?.objects?.hero) {
+      lessonSimulation.objects.hero.rotation.y = Math.sin(elapsed * 0.5) * 0.06;
+    }
+
+    if (lessonSimulation?.objects?.lamp) {
+      lessonSimulation.objects.lamp.scale.setScalar(1 + Math.sin(elapsed * 2.4) * 0.03 + (simulationState?.circuitSecured ? 0.08 : 0));
+    }
+
+    if (lessonSimulation?.objects?.droplet) {
+      lessonSimulation.objects.droplet.position.y = 0.35 + Math.sin(elapsed * 2.2) * 0.08;
+    }
+
+    if (lessonSimulation?.interactive?.length) {
+      raycaster.setFromCamera(pointer, camera);
+      const hits = raycaster.intersectObjects(lessonSimulation.interactive, false);
+      const hovered = hits[0]?.object || null;
+      lessonSimulation.interactive.forEach((mesh) => {
+        const emissive = mesh.material?.emissive;
+        if (emissive) {
+          emissive.set(mesh === hovered ? 0x2f1a08 : mesh.userData.baseEmissive || 0x000000);
+        }
+      });
+      canvas.style.cursor = hovered ? "pointer" : "crosshair";
+    }
+
     renderer.render(scene, camera);
     requestAnimationFrame(animate);
   }
 
   animate();
 
-  return { scene, renderer, camera, board, wireLive, wireNeutral, wireGround, meter, lamp };
+  return {
+    scene,
+    renderer,
+    camera,
+    stage,
+    root,
+    raycaster,
+    pointer,
+    interactive: [],
+    objects: {},
+  };
+}
+
+function buildElectricalObjects() {
+  const board = new THREE.Mesh(
+    new THREE.BoxGeometry(4.1, 2.7, 0.22),
+    new THREE.MeshStandardMaterial({ color: 0x2d241f, metalness: 0.08, roughness: 0.82, emissive: 0x000000 }),
+  );
+  board.position.set(0, 0, 0);
+  board.userData = { action: "inspect_panel", baseEmissive: 0x000000 };
+
+  const wireLive = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.08, 0.08, 2.6, 24),
+    new THREE.MeshStandardMaterial({ color: 0x4f4f4f, emissive: 0x111111 }),
+  );
+  wireLive.rotation.z = Math.PI / 2;
+  wireLive.position.set(0, 0.6, 0.2);
+  wireLive.userData = { action: "identify_live_wire", baseEmissive: 0x111111 };
+
+  const wireNeutral = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.08, 0.08, 2.6, 24),
+    new THREE.MeshStandardMaterial({ color: 0x4f4f4f, emissive: 0x111111 }),
+  );
+  wireNeutral.rotation.z = Math.PI / 2;
+  wireNeutral.position.set(0, 0, 0.2);
+
+  const wireGround = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.08, 0.08, 2.6, 24),
+    new THREE.MeshStandardMaterial({ color: 0x4f4f4f, emissive: 0x111111 }),
+  );
+  wireGround.rotation.z = Math.PI / 2;
+  wireGround.position.set(0, -0.6, 0.2);
+
+  const meter = new THREE.Mesh(
+    new THREE.BoxGeometry(0.85, 1.2, 0.35),
+    new THREE.MeshStandardMaterial({ color: 0x1f3d49, emissive: 0x092028, metalness: 0.32, roughness: 0.35 }),
+  );
+  meter.position.set(-2.25, -0.25, 0.55);
+  meter.userData = { action: "pick_multimeter", baseEmissive: 0x092028 };
+
+  const switchHandle = new THREE.Mesh(
+    new THREE.BoxGeometry(0.4, 0.9, 0.18),
+    new THREE.MeshStandardMaterial({ color: 0xe8cba5, emissive: 0x2c1806, metalness: 0.22, roughness: 0.42 }),
+  );
+  switchHandle.position.set(1.55, -0.1, 0.32);
+  switchHandle.userData = { action: "secure_circuit", baseEmissive: 0x2c1806 };
+
+  const lamp = new THREE.Mesh(
+    new THREE.SphereGeometry(0.28, 24, 24),
+    new THREE.MeshStandardMaterial({ color: 0xffd78f, emissive: 0x4f3310, metalness: 0.15, roughness: 0.3 }),
+  );
+  lamp.position.set(1.5, 1.0, 0.6);
+
+  return {
+    hero: board,
+    board,
+    wireLive,
+    wireNeutral,
+    wireGround,
+    meter,
+    switchHandle,
+    lamp,
+    interactive: [board, meter, wireLive, switchHandle],
+  };
+}
+
+function buildPlumbingObjects() {
+  const sink = new THREE.Mesh(
+    new THREE.BoxGeometry(4.4, 1.2, 2.1),
+    new THREE.MeshStandardMaterial({ color: 0x8e958f, emissive: 0x111111, metalness: 0.52, roughness: 0.36 }),
+  );
+  sink.position.set(0, 0.75, 0);
+  sink.userData = { action: "inspect_sink", baseEmissive: 0x111111 };
+
+  const trap = new THREE.Mesh(
+    new THREE.TorusGeometry(0.48, 0.12, 18, 48, Math.PI),
+    new THREE.MeshStandardMaterial({ color: 0x798088, emissive: 0x101010, metalness: 0.5, roughness: 0.32 }),
+  );
+  trap.rotation.z = Math.PI;
+  trap.position.set(0, -0.1, 0.55);
+  trap.userData = { action: "tighten_trap", baseEmissive: 0x101010 };
+
+  const pipe = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.16, 0.16, 1.35, 24),
+    new THREE.MeshStandardMaterial({ color: 0x6a7178, emissive: 0x000000, metalness: 0.48, roughness: 0.34 }),
+  );
+  pipe.position.set(0, 0.25, 0.55);
+
+  const wrench = new THREE.Mesh(
+    new THREE.BoxGeometry(1.4, 0.2, 0.35),
+    new THREE.MeshStandardMaterial({ color: 0xb76937, emissive: 0x2b1407, metalness: 0.15, roughness: 0.56 }),
+  );
+  wrench.position.set(-2, -0.95, 0.7);
+  wrench.rotation.z = -0.4;
+  wrench.userData = { action: "pick_wrench", baseEmissive: 0x2b1407 };
+
+  const valve = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.28, 0.28, 0.18, 24),
+    new THREE.MeshStandardMaterial({ color: 0x5ab3c6, emissive: 0x102c30, metalness: 0.35, roughness: 0.28 }),
+  );
+  valve.rotation.x = Math.PI / 2;
+  valve.position.set(1.75, 0.25, 0.7);
+  valve.userData = { action: "test_leak", baseEmissive: 0x102c30 };
+
+  const droplet = new THREE.Mesh(
+    new THREE.SphereGeometry(0.16, 18, 18),
+    new THREE.MeshStandardMaterial({ color: 0x67e8f9, emissive: 0x16434c, metalness: 0.22, roughness: 0.18 }),
+  );
+  droplet.position.set(0, 0.35, 0.8);
+
+  return {
+    hero: sink,
+    sink,
+    trap,
+    pipe,
+    wrench,
+    valve,
+    droplet,
+    interactive: [sink, wrench, trap, valve],
+  };
+}
+
+function configureLessonSimulation(runtime) {
+  if (!lessonSimulation) {
+    return;
+  }
+
+  while (lessonSimulation.root.children.length) {
+    lessonSimulation.root.remove(lessonSimulation.root.children[0]);
+  }
+
+  const builder = runtime?.skill?.slug === "plumbing-systems" ? buildPlumbingObjects : buildElectricalObjects;
+  lessonSimulation.objects = builder();
+  lessonSimulation.interactive = lessonSimulation.objects.interactive;
+  Object.values(lessonSimulation.objects).forEach((object) => {
+    if (object instanceof THREE.Mesh) {
+      lessonSimulation.root.add(object);
+    }
+  });
+
+  document.getElementById("runtime-stage-label").textContent =
+    getSimulationBlueprint(runtime?.skill?.slug)?.label || "Interactive lesson simulation";
+}
+
+function appendSimulationEvent(title, detail) {
+  if (!simulationState) {
+    return;
+  }
+  simulationState.eventLog.push({ title, detail });
 }
 
 function renderSimulationState() {
@@ -320,26 +539,44 @@ function renderSimulationState() {
     return;
   }
 
-  lessonSimulation.board.material.color.set(simulationState.panelInspected ? 0x3b2d26 : 0x2d241f);
-  lessonSimulation.meter.position.x = simulationState.toolPicked ? -1.3 : -2.25;
-  lessonSimulation.wireLive.material.color.set(simulationState.wireIdentified ? 0xff9a3d : 0x4f4f4f);
-  lessonSimulation.wireLive.material.emissive.set(simulationState.wireIdentified ? 0x6a2f00 : 0x111111);
-  lessonSimulation.wireNeutral.material.color.set(0x7e92b8);
-  lessonSimulation.wireGround.material.color.set(0x4fb17c);
-  lessonSimulation.lamp.material.emissive.set(simulationState.circuitSecured ? 0xffa01c : 0x4f3310);
+  if (currentLessonRuntime?.skill?.slug === "electrical-installation") {
+    lessonSimulation.objects.board.material.color.set(simulationState.panelInspected ? 0x3b2d26 : 0x2d241f);
+    lessonSimulation.objects.meter.position.x = simulationState.toolPicked ? -1.2 : -2.25;
+    lessonSimulation.objects.wireLive.material.color.set(simulationState.wireIdentified ? 0xff9a3d : 0x4f4f4f);
+    lessonSimulation.objects.wireLive.material.emissive.set(simulationState.wireIdentified ? 0x6a2f00 : 0x111111);
+    lessonSimulation.objects.switchHandle.rotation.z = simulationState.circuitSecured ? -0.4 : 0;
+    lessonSimulation.objects.lamp.material.emissive.set(simulationState.circuitSecured ? 0xffa01c : 0x4f3310);
+  }
 
-  syncSimulationButtons();
+  if (currentLessonRuntime?.skill?.slug === "plumbing-systems") {
+    lessonSimulation.objects.sink.material.color.set(simulationState.sinkInspected ? 0x98a199 : 0x8e958f);
+    lessonSimulation.objects.wrench.position.set(simulationState.toolPicked ? -0.85 : -2, simulationState.toolPicked ? -0.5 : -0.95, 0.7);
+    lessonSimulation.objects.trap.material.color.set(simulationState.trapTightened ? 0xffb35c : 0x798088);
+    lessonSimulation.objects.trap.material.emissive.set(simulationState.trapTightened ? 0x5b2404 : 0x101010);
+    lessonSimulation.objects.droplet.visible = !simulationState.leakTested;
+    lessonSimulation.objects.valve.rotation.z = simulationState.leakTested ? Math.PI / 2 : 0;
+  }
+
+  syncSimulationUI();
   setSimulationMessage(simulationState.message, simulationState.mistakes ? "default" : "success");
 }
 
 function initLessonPlayer() {
   lessonSimulation = buildSimulationScene();
   simulationState = createInitialSimulationState();
+  configureLessonSimulation({ skill: { slug: "electrical-installation" } });
+  renderSimulationHints();
+  renderSimulationEventFeed();
+  setSimulationMessage("Select an electrical or plumbing lesson to begin the interactive simulation.");
   renderSimulationState();
 }
 
 function isElectricalRuntime(runtime) {
   return runtime?.skill?.slug === "electrical-installation";
+}
+
+function isPlumbingRuntime(runtime) {
+  return runtime?.skill?.slug === "plumbing-systems";
 }
 
 async function ensureLessonSession() {
@@ -364,8 +601,9 @@ async function runSimulationAction(action) {
     setSimulationMessage("Select a lesson first.", "error");
     return;
   }
-  if (!isElectricalRuntime(currentLessonRuntime)) {
-    setSimulationMessage("Interactive simulation is currently available for Electrical Installation lessons.", "error");
+  const blueprint = getSimulationBlueprint(currentLessonRuntime.skill.slug);
+  if (!blueprint) {
+    setSimulationMessage("Interactive simulation is currently available for Electrical Installation and Plumbing Systems lessons.", "error");
     return;
   }
 
@@ -381,34 +619,65 @@ async function runSimulationAction(action) {
 
   let correct = false;
 
-  if (action === "inspect_panel" && simulationState.actions.length === 0) {
-    simulationState.panelInspected = true;
-    simulationState.score += 25;
-    simulationState.message = "Panel inspected. Pick the multimeter next.";
-    correct = true;
-  } else if (action === "pick_multimeter" && simulationState.panelInspected) {
-    simulationState.toolPicked = true;
-    simulationState.score += 25;
-    simulationState.message = "Tool selected. Identify the live wire safely.";
-    correct = true;
-  } else if (action === "identify_live_wire" && simulationState.toolPicked) {
-    simulationState.wireIdentified = true;
-    simulationState.score += 25;
-    simulationState.message = "Live wire identified. Secure the circuit to finish.";
-    correct = true;
-  } else if (action === "secure_circuit" && simulationState.wireIdentified) {
-    simulationState.circuitSecured = true;
-    simulationState.score += 25;
-    simulationState.message = "Circuit secured. You can now complete the lesson.";
-    correct = true;
-  } else {
+  if (isElectricalRuntime(currentLessonRuntime)) {
+    if (action === "inspect_panel" && simulationState.actions.length === 0) {
+      simulationState.panelInspected = true;
+      simulationState.score += 25;
+      simulationState.message = "Panel inspected. Click the multimeter next.";
+      correct = true;
+    } else if (action === "pick_multimeter" && simulationState.panelInspected) {
+      simulationState.toolPicked = true;
+      simulationState.score += 25;
+      simulationState.message = "Tool selected. Click the live wire safely.";
+      correct = true;
+    } else if (action === "identify_live_wire" && simulationState.toolPicked) {
+      simulationState.wireIdentified = true;
+      simulationState.score += 25;
+      simulationState.message = "Live wire identified. Click the breaker handle to secure the circuit.";
+      correct = true;
+    } else if (action === "secure_circuit" && simulationState.wireIdentified) {
+      simulationState.circuitSecured = true;
+      simulationState.score += 25;
+      simulationState.message = "Circuit secured. You can now complete the lesson.";
+      correct = true;
+    }
+  }
+
+  if (isPlumbingRuntime(currentLessonRuntime)) {
+    if (action === "inspect_sink" && simulationState.actions.length === 0) {
+      simulationState.sinkInspected = true;
+      simulationState.score += 25;
+      simulationState.message = "Leak source inspected. Click the wrench next.";
+      correct = true;
+    } else if (action === "pick_wrench" && simulationState.sinkInspected) {
+      simulationState.toolPicked = true;
+      simulationState.score += 25;
+      simulationState.message = "Tool selected. Click the trap joint to tighten it.";
+      correct = true;
+    } else if (action === "tighten_trap" && simulationState.toolPicked) {
+      simulationState.trapTightened = true;
+      simulationState.score += 25;
+      simulationState.message = "Trap tightened. Click the valve to run a leak test.";
+      correct = true;
+    } else if (action === "test_leak" && simulationState.trapTightened) {
+      simulationState.leakTested = true;
+      simulationState.score += 25;
+      simulationState.message = "Leak test passed. You can now complete the lesson.";
+      correct = true;
+    }
+  }
+
+  if (!correct) {
     simulationState.mistakes += 1;
     simulationState.score = Math.max(0, simulationState.score - 10);
-    simulationState.message = "Wrong order. Re-check the safe sequence before proceeding.";
+    simulationState.message = blueprint.wrongOrderMessage;
   }
 
   if (correct) {
     simulationState.actions.push(action);
+    appendSimulationEvent("Action completed", blueprint.instructions.find((item) => item.action === action)?.label || action);
+  } else {
+    appendSimulationEvent("Sequence warning", "The last interaction was out of order for this lesson.");
   }
 
   renderSimulationState();
@@ -422,12 +691,15 @@ async function resetSimulation() {
   simulationState = createInitialSimulationState();
   currentLessonSession = null;
   document.getElementById("runtime-status-pill").textContent = "Status: not started";
+  renderSimulationHints();
+  renderSimulationEventFeed();
   renderSimulationState();
 }
 
 function renderLessonRuntime(runtime) {
   currentLessonRuntime = runtime;
   currentLessonSession = runtime.active_session;
+  configureLessonSimulation(runtime);
   document.getElementById("runtime-lesson-title").textContent = runtime.lesson.title;
   document.getElementById("runtime-lesson-context").textContent =
     `${runtime.skill.title} • ${runtime.course.title} • ${runtime.module.title}`;
@@ -452,14 +724,17 @@ function renderLessonRuntime(runtime) {
     || "Ask the AI coach for feedback or submit an assessment to generate lesson feedback.";
   setCoachMode(runtime.completion?.feedback ? "fallback" : "");
 
-  if (isElectricalRuntime(runtime)) {
+  if (getSimulationBlueprint(runtime.skill.slug)) {
     simulationState = createInitialSimulationState();
+    simulationState.eventLog = [];
+    simulationState.message = getSimulationBlueprint(runtime.skill.slug).initialMessage;
     if (runtime.active_session) {
       simulationState.message = "Session resumed. Continue the safe sequence.";
+      appendSimulationEvent("Session resumed", "Continue interacting with the scene to finish the task.");
     }
     renderSimulationState();
   } else {
-    setSimulationMessage("This lesson supports assessment and coaching. The flagship interactive simulator is currently built for Electrical Installation.");
+    setSimulationMessage("This lesson supports assessment and coaching. Interactive canvas lessons are currently available for Electrical Installation and Plumbing Systems.");
   }
 }
 
@@ -1101,11 +1376,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
   });
   document.getElementById("reset-simulation-button").addEventListener("click", resetSimulation);
-  document.querySelectorAll(".simulation-action").forEach((button) => {
-    button.addEventListener("click", () => {
-      runSimulationAction(button.dataset.action);
-    });
-  });
   document.getElementById("ask-ai-button").addEventListener("click", handleAskAICoach);
   document.getElementById("submit-attempt-button").addEventListener("click", handleSubmitLessonAttempt);
   document.getElementById("complete-lesson-button").addEventListener("click", async () => {

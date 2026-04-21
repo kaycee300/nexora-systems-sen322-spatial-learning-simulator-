@@ -618,6 +618,7 @@ h2 {
 #lesson-canvas {
   width: 100%;
   height: 100%;
+  cursor: crosshair;
 }
 
 .runtime-stage-overlay {
@@ -639,16 +640,33 @@ h2 {
   background: rgba(255, 247, 240, 0.08);
 }
 
-.simulation-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.8rem;
+.simulation-hints {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
 }
 
-.simulation-action.is-complete {
+.simulation-hint {
+  display: inline-flex;
+  padding: 0.45rem 0.72rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 247, 240, 0.05);
+  color: var(--muted-strong);
+  font-size: 0.82rem;
+}
+
+.simulation-hint.is-complete {
   background: linear-gradient(135deg, var(--amber), #ffb35c);
   color: #25170f;
   border-color: transparent;
+}
+
+.simulation-event-feed {
+  display: grid;
+  gap: 0.7rem;
+  max-height: 210px;
+  overflow: auto;
 }
 
 .lesson-card {
@@ -918,7 +936,6 @@ h2 {
 
   .hero-metrics,
   .dashboard-metrics,
-  .simulation-actions,
   .scene-overlay {
     grid-template-columns: 1fr;
   }

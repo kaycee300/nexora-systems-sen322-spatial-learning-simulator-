@@ -232,14 +232,18 @@
             </div>
 
             <div class="runtime-block">
-              <p class="note-label">Simulation actions</p>
-              <div class="simulation-actions">
-                <button type="button" class="btn btn-secondary simulation-action" data-action="inspect_panel">Inspect panel</button>
-                <button type="button" class="btn btn-secondary simulation-action" data-action="pick_multimeter">Pick multimeter</button>
-                <button type="button" class="btn btn-secondary simulation-action" data-action="identify_live_wire">Identify live wire</button>
-                <button type="button" class="btn btn-secondary simulation-action" data-action="secure_circuit">Secure circuit</button>
+              <p class="note-label">Canvas interaction</p>
+              <div id="simulation-hints" class="simulation-hints">
+                <span class="simulation-hint">Start a lesson to unlock interactive objects.</span>
               </div>
               <p id="simulation-message" class="message" aria-live="polite"></p>
+            </div>
+
+            <div class="runtime-block">
+              <p class="note-label">Event feed</p>
+              <div id="simulation-event-feed" class="simulation-event-feed">
+                <div class="dashboard-item empty-state">Simulation events will appear here as you interact with the canvas.</div>
+              </div>
             </div>
 
             <div class="runtime-block">
