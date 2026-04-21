@@ -1,9 +1,6 @@
+import json
 import os
-
-try:
-    from openai import OpenAI
-except ImportError:  # pragma: no cover - optional dependency in this prototype
-    OpenAI = None  # type: ignore
+from urllib import error, request
 
 
 def _fallback_feedback(skill_title: str, lesson_title: str, learner_answer: str):
@@ -27,17 +24,23 @@ def _fallback_feedback(skill_title: str, lesson_title: str, learner_answer: str)
     )
 
 
+def _extract_ollama_message(payload: dict):
+    message = payload.get("message", {})
+    if isinstance(message, dict):
+        content = message.get("content")
+        if isinstance(content, str):
+            return content.strip()
+    return ""
+
+
 def generate_lesson_coach(skill_title: str, lesson_title: str, objective: str, learner_answer: str):
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key or OpenAI is None:
-        return _fallback_feedback(skill_title, lesson_title, learner_answer), "fallback"
+    ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434/api/chat")
+    ollama_model = os.getenv("OLLAMA_MODEL", "qwen3:1.7b")
 
-    client = OpenAI(api_key=api_key)
-    model = os.getenv("OPENAI_MODEL", "gpt-5.4-mini")
-
-    response = client.responses.create(
-        model=model,
-        input=[
+    payload = {
+        "model": ollama_model,
+        "stream": False,
+        "messages": [
             {
                 "role": "system",
                 "content": (
@@ -56,6 +59,21 @@ def generate_lesson_coach(skill_title: str, lesson_title: str, objective: str, l
                 ),
             },
         ],
-    )
+    }
 
-    return response.output_text.strip(), model
+    try:
+        req = request.Request(
+            ollama_url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with request.urlopen(req, timeout=20) as response:
+            data = json.loads(response.read().decode("utf-8"))
+            content = _extract_ollama_message(data)
+            if content:
+                return content, f"ollama:{ollama_model}"
+    except (error.URLError, TimeoutError, json.JSONDecodeError, OSError):
+        pass
+
+    return _fallback_feedback(skill_title, lesson_title, learner_answer), "fallback"

@@ -34,9 +34,25 @@ SkillScape is designed to support a wide range of practical learning domains, in
 2. Create a virtual environment: `python3 -m venv venv`
 3. Activate it: `source venv/bin/activate`
 4. Install requirements: `pip install -r requirements.txt`
-5. Run the backend: `uvicorn main:app --reload --port 8000`
+5. Optional for local AI coaching: install Ollama and pull a local model such as `qwen3:1.7b`
+6. Run the backend: `uvicorn main:app --reload --port 8000`
 
 The backend will start at `http://localhost:8000` and seed sample scenarios automatically.
+
+#### Local AI Coach With Ollama
+
+SkillScape can run its lesson coach locally without paid API usage.
+
+1. Install Ollama
+2. Start Ollama: `ollama serve`
+3. Pull a model: `ollama pull qwen3:1.7b`
+4. Optionally set a different model:
+
+```bash
+export OLLAMA_MODEL="qwen3:1.7b"
+```
+
+By default the backend calls `http://localhost:11434/api/chat`. If Ollama is not running, SkillScape falls back to built-in coaching hints.
 
 ### Frontend
 
