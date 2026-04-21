@@ -1,0 +1,56 @@
+# SkillScape – Where Practice Meets Simulation
+
+A spatial learning simulator for vocational training in electrical work, carpentry, and mechanical repairs.
+The project is intentionally split into two parts:
+
+- `backend/`: FastAPI + SQLite API for scenarios and progress tracking.
+- `frontend/`: HTML, CSS, and Three.js landing page with API integration.
+
+## Architecture
+
+- `backend/main.py`: FastAPI application with scenario and progress endpoints.
+- `backend/database.py`: SQLite database setup with SQLAlchemy.
+- `backend/models.py`: ORM models for training scenarios and user progress.
+- `backend/crud.py`: Data access layer and seed data.
+- `frontend/index.html`: Landing page and scenario explorer.
+- `frontend/app.js`: Fetches backend data and initializes the Three.js preview.
+- `frontend/styles.css`: Design and responsive layout.
+
+## Local Setup
+
+### Backend
+
+1. `cd backend`
+2. Create a virtual environment: `python3 -m venv venv`
+3. Activate it: `source venv/bin/activate`
+4. Install requirements: `pip install -r requirements.txt`
+5. Run the backend: `uvicorn backend.main:app --reload --port 8000`
+
+The backend will start at `http://localhost:8000` and seed sample scenarios automatically.
+
+### Frontend
+
+1. `cd frontend`
+2. Open `index.html` in a browser, or serve it locally with a static server.
+
+For a simple local server:
+
+```bash
+cd frontend
+python3 -m http.server 3000
+```
+
+Then open `http://localhost:3000`.
+
+## API Endpoints
+
+- `GET /scenarios` — list sample training scenarios.
+- `GET /scenarios/{id}` — get scenario details.
+- `POST /progress` — save student progress.
+- `GET /progress` — list saved progress records.
+
+## Notes
+
+- The backend uses SQLite (`skillscape.db`) in the `backend/` folder.
+- The frontend is intentionally separated so we can develop both in parallel.
+- This scaffold supports extending the simulator with real 3D training content and scenario workflows.

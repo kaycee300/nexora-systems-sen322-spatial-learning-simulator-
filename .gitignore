@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+venv/
+
+# SQLite
+backend/skillscape.db
+
+# Mac
+.DS_Store
+
+# Node
+node_modules/

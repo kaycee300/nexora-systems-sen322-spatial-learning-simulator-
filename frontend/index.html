@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SkillScape – Where Practice Meets Simulation</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">SkillScape</p>
+      <h1>Where Practice Meets Simulation</h1>
+      <p>Learn vocational skills through an interactive 3D environment that bridges theory and hands-on training.</p>
+      <div class="hero-actions">
+        <a href="#features" class="btn btn-primary">Explore Features</a>
+        <a href="#scenarios" class="btn btn-secondary">View Scenarios</a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="scene-card">
+        <canvas id="three-canvas"></canvas>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="features" class="section section-features">
+      <h2>Build Practical Skills in a Virtual Workshop</h2>
+      <div class="feature-grid">
+        <article>
+          <h3>Interactive 3D Simulation</h3>
+          <p>Use a browser-based Three.js scene to inspect and manipulate tools and workpieces.</p>
+        </article>
+        <article>
+          <h3>Scenario-Based Learning</h3>
+          <p>Practice electrical, carpentry, and mechanical tasks through guided scenarios.</p>
+        </article>
+        <article>
+          <h3>Backend-Connected Progress</h3>
+          <p>Save learner progress and retrieve scenarios using a FastAPI backend and SQLite database.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="scenarios" class="section section-scenarios">
+      <div class="section-header">
+        <h2>Available Training Scenarios</h2>
+        <p>Each scenario is designed to emphasize real-world vocational concepts and tool use.</p>
+      </div>
+      <div id="scenario-list" class="scenario-list">
+        <div class="scenario-item">Loading scenarios from the backend...</div>
+      </div>
+    </section>
+
+    <section class="section section-progress">
+      <h2>Record Your Progress</h2>
+      <p>Submit your current scenario progress to the backend for tracking.</p>
+      <form id="progress-form" class="progress-form">
+        <label>
+          Student name
+          <input type="text" id="student-name" placeholder="Your name" required />
+        </label>
+        <label>
+          Scenario ID
+          <input type="number" id="scenario-id" placeholder="Enter scenario ID" required min="1" />
+        </label>
+        <label>
+          Status
+          <select id="progress-status" required>
+            <option value="In progress">In progress</option>
+            <option value="Completed">Completed</option>
+            <option value="Needs review">Needs review</option>
+          </select>
+        </label>
+        <button type="submit" class="btn btn-primary">Save progress</button>
+        <p id="progress-message" class="message"></p>
+      </form>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>SkillScape – Practical vocational training through simulation.</p>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r157/three.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
