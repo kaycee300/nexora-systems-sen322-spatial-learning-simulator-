@@ -114,21 +114,6 @@ SKILL_TRACKS = [
         },
     },
     {
-        "slug": "motorcycle-repair",
-        "title": "Motorcycle Repair",
-        "category": "Mobility",
-        "description": "Learn inspection, chain care, brake adjustment, and simple engine diagnosis for motorcycles and scooters.",
-        "demand_level": "Medium",
-        "difficulty": "Intermediate",
-        "learning_path": "Inspection -> drive system -> brakes -> engine checks -> final test",
-        "scenario": {
-            "title": "Motorcycle Drive Tune-Up",
-            "description": "Inspect chain tension, wheel alignment, and brake response before releasing the bike.",
-            "tool": "Torque Wrench",
-            "difficulty": "Intermediate",
-        },
-    },
-    {
         "slug": "hvac-basics",
         "title": "HVAC Basics",
         "category": "Building Systems",
@@ -444,21 +429,6 @@ SKILL_TRACKS = [
         },
     },
     {
-        "slug": "project-coordination",
-        "title": "Project Coordination",
-        "category": "Business Skills",
-        "description": "Learn task sequencing, stakeholder updates, delivery tracking, and practical execution discipline.",
-        "demand_level": "Medium",
-        "difficulty": "Intermediate",
-        "learning_path": "Scope -> tasks -> ownership -> tracking -> review",
-        "scenario": {
-            "title": "Delivery Timeline Rescue",
-            "description": "Re-plan a slipping project by prioritizing tasks, updating owners, and protecting key milestones.",
-            "tool": "Project Board",
-            "difficulty": "Intermediate",
-        },
-    },
-    {
         "slug": "ai-workflow-planning",
         "title": "AI Workflow Planning",
         "category": "Digital Skills",
@@ -470,21 +440,6 @@ SKILL_TRACKS = [
             "title": "AI Workflow Planning",
             "description": "Build a high-level AI solution by choosing datasets, model types, and evaluation metrics.",
             "tool": "Planning Board",
-            "difficulty": "Intermediate",
-        },
-    },
-    {
-        "slug": "drone-operations",
-        "title": "Drone Operations",
-        "category": "Emerging Tech",
-        "description": "Learn pre-flight checks, route planning, safe operation, and basic capture workflows for drones.",
-        "demand_level": "Medium",
-        "difficulty": "Intermediate",
-        "learning_path": "Pre-flight -> controls -> route -> safety -> capture review",
-        "scenario": {
-            "title": "Pre-Flight Safety Brief",
-            "description": "Complete a drone safety check and choose the correct flight plan for a short survey mission.",
-            "tool": "Flight Tablet",
             "difficulty": "Intermediate",
         },
     },
@@ -506,12 +461,27 @@ SKILL_TRACKS = [
 ]
 
 
+ACTIVE_SKILL_SLUGS = tuple(track["slug"] for track in SKILL_TRACKS)
+
+
 def get_skill_tracks(db: Session):
-    return db.query(models.SkillTrack).order_by(models.SkillTrack.title.asc()).all()
+    return (
+        db.query(models.SkillTrack)
+        .filter(models.SkillTrack.slug.in_(ACTIVE_SKILL_SLUGS))
+        .order_by(models.SkillTrack.title.asc())
+        .all()
+    )
 
 
 def get_skill_track(db: Session, skill_id: int):
-    return db.query(models.SkillTrack).filter(models.SkillTrack.id == skill_id).first()
+    return (
+        db.query(models.SkillTrack)
+        .filter(
+            models.SkillTrack.id == skill_id,
+            models.SkillTrack.slug.in_(ACTIVE_SKILL_SLUGS),
+        )
+        .first()
+    )
 
 
 def get_scenarios_for_skill(db: Session, skill_id: int):
@@ -524,7 +494,13 @@ def get_scenarios_for_skill(db: Session, skill_id: int):
 
 
 def get_scenarios(db: Session):
-    return db.query(models.Scenario).order_by(models.Scenario.title.asc()).all()
+    return (
+        db.query(models.Scenario)
+        .join(models.SkillTrack, models.SkillTrack.id == models.Scenario.skill_id)
+        .filter(models.SkillTrack.slug.in_(ACTIVE_SKILL_SLUGS))
+        .order_by(models.Scenario.title.asc())
+        .all()
+    )
 
 
 def get_scenario(db: Session, scenario_id: int):
