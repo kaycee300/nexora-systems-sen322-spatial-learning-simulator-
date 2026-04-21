@@ -232,7 +232,8 @@ function renderDashboardState(dashboard) {
     recommendationsEl.appendChild(card);
   });
 
-  const coursesEl = document.getElementById("dashboard-recommendations");
+  const coursesEl = document.getElementById("dashboard-courses");
+  coursesEl.innerHTML = "";
   if (dashboard.recommended_courses.length) {
     dashboard.recommended_courses.forEach((course) => {
       const card = document.createElement("div");
@@ -258,6 +259,8 @@ function renderLoggedOutDashboard() {
     "<div class=\"dashboard-item empty-state\">No learner data yet.</div>";
   document.getElementById("dashboard-recommendations").innerHTML =
     "<div class=\"dashboard-item empty-state\">Your recommended tracks will appear here after login.</div>";
+  document.getElementById("dashboard-courses").innerHTML =
+    "<div class=\"dashboard-item empty-state\">Your recommended courses will appear here after login.</div>";
 }
 
 async function refreshDashboard() {

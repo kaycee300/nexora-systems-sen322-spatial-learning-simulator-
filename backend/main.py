@@ -36,36 +36,29 @@ def get_db():
 
 
 def ensure_schema():
+    models.Base.metadata.create_all(
+        bind=engine,
+        tables=[
+            models.SkillTrack.__table__,
+            models.User.__table__,
+            models.Scenario.__table__,
+            models.Course.__table__,
+            models.Module.__table__,
+            models.Lesson.__table__,
+            models.UserProgress.__table__,
+        ],
+        checkfirst=True,
+    )
+
     inspector = inspect(engine)
 
-    if not inspector.has_table("skill_tracks"):
-        models.SkillTrack.__table__.create(bind=engine, checkfirst=True)
-
-    if not inspector.has_table("users"):
-        models.User.__table__.create(bind=engine, checkfirst=True)
-
-    if not inspector.has_table("scenarios"):
-        models.Scenario.__table__.create(bind=engine, checkfirst=True)
-
-    if not inspector.has_table("courses"):
-        models.Course.__table__.create(bind=engine, checkfirst=True)
-
-    if not inspector.has_table("modules"):
-        models.Module.__table__.create(bind=engine, checkfirst=True)
-
-    if not inspector.has_table("lessons"):
-        models.Lesson.__table__.create(bind=engine, checkfirst=True)
-
-    if not inspector.has_table("user_progress"):
-        models.UserProgress.__table__.create(bind=engine, checkfirst=True)
-
-    scenario_columns = {column["name"] for column in inspect(engine).get_columns("scenarios")}
+    scenario_columns = {column["name"] for column in inspector.get_columns("scenarios")}
 
     if "skill_id" not in scenario_columns:
         with engine.begin() as connection:
             connection.execute(text("ALTER TABLE scenarios ADD COLUMN skill_id INTEGER"))
 
-    progress_columns = {column["name"] for column in inspect(engine).get_columns("user_progress")}
+    progress_columns = {column["name"] for column in inspector.get_columns("user_progress")}
     if "user_id" not in progress_columns:
         with engine.begin() as connection:
             connection.execute(text("ALTER TABLE user_progress ADD COLUMN user_id INTEGER"))
