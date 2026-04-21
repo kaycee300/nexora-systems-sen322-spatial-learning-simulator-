@@ -519,6 +519,64 @@ def authenticate_user(db: Session, payload: schemas.UserLogin):
     return user
 
 
+def _split_learning_steps(path: str):
+    return [step.strip() for step in path.split("->") if step.strip()]
+
+
+def _build_course_seed(track_data: dict):
+    steps = _split_learning_steps(track_data["learning_path"])
+    if not steps:
+        steps = ["Orientation", "Core Practice", "Applied Assessment"]
+
+    modules = []
+    for module_index, step in enumerate(steps[:4], start=1):
+        lessons = [
+            {
+                "title": f"{step}: concepts",
+                "objective": f"Understand the core ideas behind {step.lower()} in {track_data['title'].lower()}.",
+                "format": "Interactive brief",
+                "duration_minutes": 18,
+                "position": 1,
+            },
+            {
+                "title": f"{step}: guided practice",
+                "objective": f"Practice {step.lower()} with a structured walkthrough and checkpoints.",
+                "format": "Guided simulation",
+                "duration_minutes": 28,
+                "position": 2,
+            },
+        ]
+
+        if module_index == len(steps[:4]):
+            lessons.append(
+                {
+                    "title": f"{track_data['scenario']['title']}: assessment",
+                    "objective": track_data["scenario"]["description"],
+                    "format": "Scenario assessment",
+                    "duration_minutes": 35,
+                    "position": 3,
+                }
+            )
+
+        modules.append(
+            {
+                "title": step.title(),
+                "description": f"Build confidence in {step.lower()} before moving to the next stage of the {track_data['title'].lower()} path.",
+                "position": module_index,
+                "lessons": lessons,
+            }
+        )
+
+    return {
+        "title": f"{track_data['title']} Career Path",
+        "summary": f"A guided sequence for learners building practical skill in {track_data['title'].lower()}.",
+        "level": track_data["difficulty"],
+        "duration_weeks": max(4, len(modules) * 2),
+        "outcome": f"Complete the path with working confidence in {track_data['title'].lower()} foundations.",
+        "modules": modules,
+    }
+
+
 def get_skill_tracks(db: Session):
     return (
         db.query(models.SkillTrack)
@@ -536,6 +594,47 @@ def get_skill_track(db: Session, skill_id: int):
             models.SkillTrack.slug.in_(ACTIVE_SKILL_SLUGS),
         )
         .first()
+    )
+
+
+def get_courses(db: Session):
+    return (
+        db.query(models.Course)
+        .join(models.SkillTrack, models.SkillTrack.id == models.Course.skill_id)
+        .filter(models.SkillTrack.slug.in_(ACTIVE_SKILL_SLUGS))
+        .order_by(models.Course.title.asc())
+        .all()
+    )
+
+
+def get_course(db: Session, course_id: int):
+    return (
+        db.query(models.Course)
+        .join(models.SkillTrack, models.SkillTrack.id == models.Course.skill_id)
+        .filter(models.Course.id == course_id, models.SkillTrack.slug.in_(ACTIVE_SKILL_SLUGS))
+        .first()
+    )
+
+
+def get_course_for_skill(db: Session, skill_id: int):
+    return db.query(models.Course).filter(models.Course.skill_id == skill_id).first()
+
+
+def get_modules_for_course(db: Session, course_id: int):
+    return (
+        db.query(models.Module)
+        .filter(models.Module.course_id == course_id)
+        .order_by(models.Module.position.asc())
+        .all()
+    )
+
+
+def get_lessons_for_module(db: Session, module_id: int):
+    return (
+        db.query(models.Lesson)
+        .filter(models.Lesson.module_id == module_id)
+        .order_by(models.Lesson.position.asc())
+        .all()
     )
 
 
@@ -596,6 +695,7 @@ def create_progress(db: Session, progress: schemas.ProgressCreate):
 
 
 def build_skill_track_detail(db: Session, skill: models.SkillTrack):
+    course = get_course_for_skill(db, skill.id)
     return schemas.SkillTrackDetail.model_validate(
         {
             "id": skill.id,
@@ -607,6 +707,35 @@ def build_skill_track_detail(db: Session, skill: models.SkillTrack):
             "difficulty": skill.difficulty,
             "learning_path": skill.learning_path,
             "scenarios": get_scenarios_for_skill(db, skill.id),
+            "course": build_course_detail(db, course) if course is not None else None,
+        }
+    )
+
+
+def build_course_detail(db: Session, course: models.Course):
+    modules = []
+    for module in get_modules_for_course(db, course.id):
+        modules.append(
+            {
+                "id": module.id,
+                "course_id": module.course_id,
+                "title": module.title,
+                "description": module.description,
+                "position": module.position,
+                "lessons": get_lessons_for_module(db, module.id),
+            }
+        )
+
+    return schemas.CourseDetail.model_validate(
+        {
+            "id": course.id,
+            "skill_id": course.skill_id,
+            "title": course.title,
+            "summary": course.summary,
+            "level": course.level,
+            "duration_weeks": course.duration_weeks,
+            "outcome": course.outcome,
+            "modules": modules,
         }
     )
 
@@ -617,6 +746,10 @@ def build_user_profile(user: models.User):
 
 def get_recommended_skills(db: Session, limit: int = 6):
     return get_skill_tracks(db)[:limit]
+
+
+def get_recommended_courses(db: Session, limit: int = 4):
+    return get_courses(db)[:limit]
 
 
 def build_learner_dashboard(db: Session, user: models.User):
@@ -631,12 +764,21 @@ def build_learner_dashboard(db: Session, user: models.User):
         in_progress_sessions=in_progress_sessions,
         recent_activity=[schemas.Progress.model_validate(item) for item in activity[:6]],
         recommended_skills=[schemas.SkillTrack.model_validate(item) for item in get_recommended_skills(db)],
+        recommended_courses=[schemas.Course.model_validate(item) for item in get_recommended_courses(db)],
     )
 
 
 def seed_scenarios(db: Session):
     existing_tracks = {track.slug: track for track in db.query(models.SkillTrack).all()}
     existing_scenarios = {record.title: record for record in db.query(models.Scenario).all()}
+
+    existing_courses = {course.skill_id: course for course in db.query(models.Course).all()}
+    existing_modules = {
+        (module.course_id, module.position): module for module in db.query(models.Module).all()
+    }
+    existing_lessons = {
+        (lesson.module_id, lesson.position): lesson for lesson in db.query(models.Lesson).all()
+    }
 
     for track_data in SKILL_TRACKS:
         scenario_data = track_data["scenario"]
@@ -678,6 +820,64 @@ def seed_scenarios(db: Session):
             scenario.description = scenario_data["description"]
             scenario.tool = scenario_data["tool"]
             scenario.difficulty = scenario_data["difficulty"]
+
+        course_seed = _build_course_seed(track_data)
+        course = existing_courses.get(skill.id)
+        if course is None:
+            course = models.Course(
+                skill_id=skill.id,
+                title=course_seed["title"],
+                summary=course_seed["summary"],
+                level=course_seed["level"],
+                duration_weeks=course_seed["duration_weeks"],
+                outcome=course_seed["outcome"],
+            )
+            db.add(course)
+            db.flush()
+            existing_courses[skill.id] = course
+        else:
+            course.title = course_seed["title"]
+            course.summary = course_seed["summary"]
+            course.level = course_seed["level"]
+            course.duration_weeks = course_seed["duration_weeks"]
+            course.outcome = course_seed["outcome"]
+
+        for module_seed in course_seed["modules"]:
+            module_key = (course.id, module_seed["position"])
+            module = existing_modules.get(module_key)
+            if module is None:
+                module = models.Module(
+                    course_id=course.id,
+                    title=module_seed["title"],
+                    description=module_seed["description"],
+                    position=module_seed["position"],
+                )
+                db.add(module)
+                db.flush()
+                existing_modules[module_key] = module
+            else:
+                module.title = module_seed["title"]
+                module.description = module_seed["description"]
+
+            for lesson_seed in module_seed["lessons"]:
+                lesson_key = (module.id, lesson_seed["position"])
+                lesson = existing_lessons.get(lesson_key)
+                if lesson is None:
+                    lesson = models.Lesson(
+                        module_id=module.id,
+                        title=lesson_seed["title"],
+                        objective=lesson_seed["objective"],
+                        format=lesson_seed["format"],
+                        duration_minutes=lesson_seed["duration_minutes"],
+                        position=lesson_seed["position"],
+                    )
+                    db.add(lesson)
+                    existing_lessons[lesson_key] = lesson
+                else:
+                    lesson.title = lesson_seed["title"]
+                    lesson.objective = lesson_seed["objective"]
+                    lesson.format = lesson_seed["format"]
+                    lesson.duration_minutes = lesson_seed["duration_minutes"]
 
     legacy_title = "Creative Skills Simulation"
     legacy_record = existing_scenarios.get(legacy_title)

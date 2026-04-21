@@ -31,8 +31,57 @@ class SkillTrack(SkillTrackBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+class LessonBase(BaseModel):
+    title: str
+    objective: str
+    format: str
+    duration_minutes: int
+    position: int
+
+
+class Lesson(LessonBase):
+    id: int
+    module_id: int
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ModuleBase(BaseModel):
+    title: str
+    description: str
+    position: int
+
+
+class Module(ModuleBase):
+    id: int
+    course_id: int
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ModuleDetail(Module):
+    lessons: list[Lesson]
+
+
+class CourseBase(BaseModel):
+    skill_id: int
+    title: str
+    summary: str
+    level: str
+    duration_weeks: int
+    outcome: str
+
+
+class Course(CourseBase):
+    id: int
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CourseDetail(Course):
+    modules: list[ModuleDetail]
+
+
 class SkillTrackDetail(SkillTrack):
     scenarios: list[Scenario]
+    course: CourseDetail | None = None
 
 
 class ProgressCreate(BaseModel):
@@ -81,6 +130,7 @@ class LearnerDashboard(BaseModel):
     in_progress_sessions: int
     recent_activity: list[Progress]
     recommended_skills: list[SkillTrack]
+    recommended_courses: list[Course]
 
 
 class Message(BaseModel):

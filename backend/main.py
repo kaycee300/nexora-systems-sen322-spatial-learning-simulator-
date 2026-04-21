@@ -47,6 +47,15 @@ def ensure_schema():
     if not inspector.has_table("scenarios"):
         models.Scenario.__table__.create(bind=engine, checkfirst=True)
 
+    if not inspector.has_table("courses"):
+        models.Course.__table__.create(bind=engine, checkfirst=True)
+
+    if not inspector.has_table("modules"):
+        models.Module.__table__.create(bind=engine, checkfirst=True)
+
+    if not inspector.has_table("lessons"):
+        models.Lesson.__table__.create(bind=engine, checkfirst=True)
+
     if not inspector.has_table("user_progress"):
         models.UserProgress.__table__.create(bind=engine, checkfirst=True)
 
@@ -121,6 +130,30 @@ async def read_skill_track(skill_id: int, db: Session = Depends(get_db)):
     if skill is None:
         raise HTTPException(status_code=404, detail="Skill track not found")
     return crud.build_skill_track_detail(db, skill)
+
+
+@app.get("/courses", response_model=list[schemas.Course])
+async def read_courses(db: Session = Depends(get_db)):
+    return crud.get_courses(db)
+
+
+@app.get("/courses/{course_id}", response_model=schemas.CourseDetail)
+async def read_course(course_id: int, db: Session = Depends(get_db)):
+    course = crud.get_course(db, course_id)
+    if course is None:
+        raise HTTPException(status_code=404, detail="Course not found")
+    return crud.build_course_detail(db, course)
+
+
+@app.get("/skills/{skill_id}/course", response_model=schemas.CourseDetail)
+async def read_skill_course(skill_id: int, db: Session = Depends(get_db)):
+    skill = crud.get_skill_track(db, skill_id)
+    if skill is None:
+        raise HTTPException(status_code=404, detail="Skill track not found")
+    course = crud.get_course_for_skill(db, skill_id)
+    if course is None:
+        raise HTTPException(status_code=404, detail="Course not found")
+    return crud.build_course_detail(db, course)
 
 
 @app.get("/skills/{skill_id}/scenarios", response_model=list[schemas.Scenario])

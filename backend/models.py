@@ -20,6 +20,40 @@ class SkillTrack(Base):
     learning_path = Column(String, nullable=False)
 
 
+class Course(Base):
+    __tablename__ = "courses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    skill_id = Column(Integer, ForeignKey("skill_tracks.id"), unique=True, nullable=False)
+    title = Column(String, nullable=False)
+    summary = Column(String, nullable=False)
+    level = Column(String, nullable=False)
+    duration_weeks = Column(Integer, nullable=False)
+    outcome = Column(String, nullable=False)
+
+
+class Module(Base):
+    __tablename__ = "modules"
+
+    id = Column(Integer, primary_key=True, index=True)
+    course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
+    title = Column(String, nullable=False)
+    description = Column(String, nullable=False)
+    position = Column(Integer, nullable=False)
+
+
+class Lesson(Base):
+    __tablename__ = "lessons"
+
+    id = Column(Integer, primary_key=True, index=True)
+    module_id = Column(Integer, ForeignKey("modules.id"), nullable=False)
+    title = Column(String, nullable=False)
+    objective = Column(String, nullable=False)
+    format = Column(String, nullable=False)
+    duration_minutes = Column(Integer, nullable=False)
+    position = Column(Integer, nullable=False)
+
+
 class User(Base):
     __tablename__ = "users"
 

@@ -54,6 +54,53 @@ async function fetchSkills() {
   return response.json();
 }
 
+async function fetchSkillCourse(skillId) {
+  const response = await fetch(`${BACKEND_URL}/skills/${skillId}/course`);
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || "Unable to load course path.");
+  }
+
+  return data;
+}
+
+function renderCourse(course) {
+  document.getElementById("course-title").textContent = course.title;
+  document.getElementById("course-summary").textContent = course.summary;
+  document.getElementById("course-level").textContent = course.level;
+  document.getElementById("course-duration").textContent = `${course.duration_weeks} weeks`;
+  document.getElementById("course-outcome").textContent = course.outcome;
+
+  const moduleList = document.getElementById("course-module-list");
+  moduleList.innerHTML = "";
+
+  course.modules.forEach((module) => {
+    const moduleCard = document.createElement("article");
+    moduleCard.className = "progress-panel module-card";
+
+    const lessonMarkup = module.lessons
+      .map(
+        (lesson) => `
+          <div class="lesson-card">
+            <strong>${lesson.position}. ${lesson.title}</strong>
+            <p>${lesson.objective}</p>
+            <span>${lesson.format} • ${lesson.duration_minutes} min</span>
+          </div>
+        `
+      )
+      .join("");
+
+    moduleCard.innerHTML = `
+      <p class="note-label">Module ${module.position}</p>
+      <h3>${module.title}</h3>
+      <p>${module.description}</p>
+      <div class="lesson-list">${lessonMarkup}</div>
+    `;
+    moduleList.appendChild(moduleCard);
+  });
+}
+
 function renderSkills(skills) {
   const listEl = document.getElementById("skill-list");
   const countEl = document.getElementById("skill-count");
@@ -66,9 +113,10 @@ function renderSkills(skills) {
     return;
   }
 
-  skills.forEach((skill) => {
-    const card = document.createElement("article");
-    card.className = "skill-card";
+  skills.forEach((skill, index) => {
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = `skill-card${index === 0 ? " is-active" : ""}`;
     card.innerHTML = `
       <h3>${skill.title}</h3>
       <p>${skill.description}</p>
@@ -78,6 +126,18 @@ function renderSkills(skills) {
         <span>Demand: ${skill.demand_level}</span>
       </div>
     `;
+    card.addEventListener("click", async () => {
+      document.querySelectorAll(".skill-card").forEach((item) => item.classList.remove("is-active"));
+      card.classList.add("is-active");
+
+      try {
+        const course = await fetchSkillCourse(skill.id);
+        renderCourse(course);
+      } catch (error) {
+        document.getElementById("course-module-list").innerHTML =
+          `<div class="progress-panel loading-card">${error.message}</div>`;
+      }
+    });
     listEl.appendChild(card);
   });
 }
@@ -171,6 +231,20 @@ function renderDashboardState(dashboard) {
     `;
     recommendationsEl.appendChild(card);
   });
+
+  const coursesEl = document.getElementById("dashboard-recommendations");
+  if (dashboard.recommended_courses.length) {
+    dashboard.recommended_courses.forEach((course) => {
+      const card = document.createElement("div");
+      card.className = "dashboard-item";
+      card.innerHTML = `
+        <strong>${course.title}</strong>
+        <p>${course.summary}</p>
+        <span>${course.level}</span>
+      `;
+      coursesEl.appendChild(card);
+    });
+  }
 }
 
 function renderLoggedOutDashboard() {
@@ -487,10 +561,16 @@ window.addEventListener("DOMContentLoaded", async () => {
     const [skills, scenarios] = await Promise.all([fetchSkills(), fetchScenarios()]);
     renderSkills(skills);
     renderScenarios(scenarios);
+    if (skills.length) {
+      const firstCourse = await fetchSkillCourse(skills[0].id);
+      renderCourse(firstCourse);
+    }
   } catch (error) {
     document.getElementById("skill-list").innerHTML =
       `<div class="skill-card loading-card">${error.message}</div>`;
     renderScenarioError(error.message);
+    document.getElementById("course-module-list").innerHTML =
+      `<div class="progress-panel loading-card">${error.message}</div>`;
   }
 
   if (currentUser) {

@@ -33,6 +33,7 @@
       <nav class="site-nav" aria-label="Primary">
         <a href="#capabilities">Capabilities</a>
         <a href="#scenarios">Scenarios</a>
+        <a href="#learning-paths">Learning Paths</a>
         <a href="#dashboard">Dashboard</a>
         <a href="#progress">Progress</a>
       </nav>
@@ -157,6 +158,36 @@
 
           <div id="scenario-list" class="scenario-list" aria-live="polite">
             <div class="scenario-item loading-card">Loading scenarios from the backend...</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section progress-section reveal" id="learning-paths">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">Guided learning</p>
+            <h2>Every skill track now has a course, modules, and lessons.</h2>
+          </div>
+          <p class="section-summary">
+            This is the first real curriculum layer. Select a skill track to inspect the
+            structured path that takes a learner from orientation to assessment.
+          </p>
+        </div>
+
+        <div class="scenario-layout">
+          <aside class="scenario-spotlight">
+            <p class="spotlight-label">Course spotlight</p>
+            <h3 id="course-title">Loading course path...</h3>
+            <p id="course-summary">Fetching the structured learning path from the backend.</p>
+            <div class="spotlight-meta">
+              <span id="course-level">Level pending</span>
+              <span id="course-duration">Duration pending</span>
+            </div>
+            <p class="spotlight-id" id="course-outcome">Outcome pending</p>
+          </aside>
+
+          <div id="course-module-list" class="course-module-list" aria-live="polite">
+            <div class="progress-panel loading-card">Loading modules and lessons...</div>
           </div>
         </div>
       </section>
