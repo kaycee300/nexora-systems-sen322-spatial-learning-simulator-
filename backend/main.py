@@ -41,6 +41,9 @@ def ensure_schema():
     if not inspector.has_table("skill_tracks"):
         models.SkillTrack.__table__.create(bind=engine)
 
+    if not inspector.has_table("users"):
+        models.User.__table__.create(bind=engine)
+
     if not inspector.has_table("scenarios"):
         models.Scenario.__table__.create(bind=engine)
 
@@ -52,6 +55,11 @@ def ensure_schema():
     if "skill_id" not in scenario_columns:
         with engine.begin() as connection:
             connection.execute(text("ALTER TABLE scenarios ADD COLUMN skill_id INTEGER"))
+
+    progress_columns = {column["name"] for column in inspect(engine).get_columns("user_progress")}
+    if "user_id" not in progress_columns:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE user_progress ADD COLUMN user_id INTEGER"))
 
 
 ensure_schema()
@@ -70,6 +78,31 @@ async def startup_event():
 @app.get("/health", response_model=schemas.Message)
 async def health_check():
     return {"detail": "SkillScape backend is running."}
+
+
+@app.post("/auth/register", response_model=schemas.AuthResponse)
+async def register_user(payload: schemas.UserCreate, db: Session = Depends(get_db)):
+    existing_user = crud.get_user_by_email(db, payload.email)
+    if existing_user is not None:
+        raise HTTPException(status_code=400, detail="An account with this email already exists")
+    user = crud.create_user(db, payload)
+    return {"message": "Account created", "user": crud.build_user_profile(user)}
+
+
+@app.post("/auth/login", response_model=schemas.AuthResponse)
+async def login_user(payload: schemas.UserLogin, db: Session = Depends(get_db)):
+    user = crud.authenticate_user(db, payload)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    return {"message": "Login successful", "user": crud.build_user_profile(user)}
+
+
+@app.get("/users/{user_id}/dashboard", response_model=schemas.LearnerDashboard)
+async def read_learner_dashboard(user_id: int, db: Session = Depends(get_db)):
+    user = crud.get_user(db, user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return crud.build_learner_dashboard(db, user)
 
 
 @app.get("/scenarios", response_model=list[schemas.Scenario])
@@ -111,6 +144,10 @@ async def save_progress(progress: schemas.ProgressCreate, db: Session = Depends(
     scenario = crud.get_scenario(db, progress.scenario_id)
     if scenario is None:
         raise HTTPException(status_code=404, detail="Scenario not found")
+    if progress.user_id is not None and crud.get_user(db, progress.user_id) is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    if progress.user_id is None and not progress.student_name:
+        raise HTTPException(status_code=400, detail="Student name is required when no user account is provided")
     return crud.create_progress(db, progress)
 
 

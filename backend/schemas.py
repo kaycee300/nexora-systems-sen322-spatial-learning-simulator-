@@ -36,7 +36,8 @@ class SkillTrackDetail(SkillTrack):
 
 
 class ProgressCreate(BaseModel):
-    student_name: str
+    user_id: int | None = None
+    student_name: str | None = None
     scenario_id: int
     status: str
 
@@ -45,6 +46,41 @@ class Progress(ProgressCreate):
     id: int
     updated_at: datetime | None = None
     model_config = ConfigDict(from_attributes=True)
+
+
+class UserCreate(BaseModel):
+    name: str
+    email: str
+    password: str
+    learning_goal: str | None = None
+
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+
+class UserProfile(BaseModel):
+    id: int
+    name: str
+    email: str
+    learning_goal: str | None = None
+    created_at: datetime | None = None
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AuthResponse(BaseModel):
+    message: str
+    user: UserProfile
+
+
+class LearnerDashboard(BaseModel):
+    user: UserProfile
+    total_progress_entries: int
+    completed_sessions: int
+    in_progress_sessions: int
+    recent_activity: list[Progress]
+    recommended_skills: list[SkillTrack]
 
 
 class Message(BaseModel):

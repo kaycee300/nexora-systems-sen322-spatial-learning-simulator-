@@ -20,6 +20,17 @@ class SkillTrack(Base):
     learning_path = Column(String, nullable=False)
 
 
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    email = Column(String, unique=True, index=True, nullable=False)
+    password_hash = Column(String, nullable=False)
+    learning_goal = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
 class Scenario(Base):
     __tablename__ = "scenarios"
 
@@ -35,6 +46,7 @@ class UserProgress(Base):
     __tablename__ = "user_progress"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     student_name = Column(String, nullable=False)
     scenario_id = Column(Integer, ForeignKey("scenarios.id"), nullable=False)
     status = Column(String, nullable=False)

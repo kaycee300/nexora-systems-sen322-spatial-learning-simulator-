@@ -1,3 +1,7 @@
+import hashlib
+import hmac
+import secrets
+
 from sqlalchemy.orm import Session
 
 try:
@@ -464,6 +468,57 @@ SKILL_TRACKS = [
 ACTIVE_SKILL_SLUGS = tuple(track["slug"] for track in SKILL_TRACKS)
 
 
+def _normalize_email(email: str):
+    return email.strip().lower()
+
+
+def _hash_password(password: str, salt: str | None = None):
+    password_salt = salt or secrets.token_hex(16)
+    digest = hashlib.pbkdf2_hmac(
+        "sha256",
+        password.encode("utf-8"),
+        password_salt.encode("utf-8"),
+        100_000,
+    ).hex()
+    return f"{password_salt}${digest}"
+
+
+def _verify_password(password: str, stored_hash: str):
+    salt, expected = stored_hash.split("$", 1)
+    candidate = _hash_password(password, salt).split("$", 1)[1]
+    return hmac.compare_digest(candidate, expected)
+
+
+def get_user_by_email(db: Session, email: str):
+    return db.query(models.User).filter(models.User.email == _normalize_email(email)).first()
+
+
+def get_user(db: Session, user_id: int):
+    return db.query(models.User).filter(models.User.id == user_id).first()
+
+
+def create_user(db: Session, payload: schemas.UserCreate):
+    user = models.User(
+        name=payload.name.strip(),
+        email=_normalize_email(payload.email),
+        password_hash=_hash_password(payload.password),
+        learning_goal=payload.learning_goal.strip() if payload.learning_goal else None,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def authenticate_user(db: Session, payload: schemas.UserLogin):
+    user = get_user_by_email(db, payload.email)
+    if user is None:
+        return None
+    if not _verify_password(payload.password, user.password_hash):
+        return None
+    return user
+
+
 def get_skill_tracks(db: Session):
     return (
         db.query(models.SkillTrack)
@@ -508,12 +563,29 @@ def get_scenario(db: Session, scenario_id: int):
 
 
 def get_progress(db: Session):
-    return db.query(models.UserProgress).all()
+    return db.query(models.UserProgress).order_by(models.UserProgress.updated_at.desc()).all()
+
+
+def get_user_progress(db: Session, user_id: int):
+    return (
+        db.query(models.UserProgress)
+        .filter(models.UserProgress.user_id == user_id)
+        .order_by(models.UserProgress.updated_at.desc())
+        .all()
+    )
 
 
 def create_progress(db: Session, progress: schemas.ProgressCreate):
+    student_name = progress.student_name.strip() if progress.student_name else None
+
+    if progress.user_id is not None:
+        user = get_user(db, progress.user_id)
+        if user is not None:
+            student_name = user.name
+
     db_progress = models.UserProgress(
-        student_name=progress.student_name,
+        user_id=progress.user_id,
+        student_name=student_name or "SkillScape learner",
         scenario_id=progress.scenario_id,
         status=progress.status,
     )
@@ -536,6 +608,29 @@ def build_skill_track_detail(db: Session, skill: models.SkillTrack):
             "learning_path": skill.learning_path,
             "scenarios": get_scenarios_for_skill(db, skill.id),
         }
+    )
+
+
+def build_user_profile(user: models.User):
+    return schemas.UserProfile.model_validate(user)
+
+
+def get_recommended_skills(db: Session, limit: int = 6):
+    return get_skill_tracks(db)[:limit]
+
+
+def build_learner_dashboard(db: Session, user: models.User):
+    activity = get_user_progress(db, user.id)
+    completed_sessions = sum(1 for item in activity if item.status == "Completed")
+    in_progress_sessions = sum(1 for item in activity if item.status == "In progress")
+
+    return schemas.LearnerDashboard(
+        user=build_user_profile(user),
+        total_progress_entries=len(activity),
+        completed_sessions=completed_sessions,
+        in_progress_sessions=in_progress_sessions,
+        recent_activity=[schemas.Progress.model_validate(item) for item in activity[:6]],
+        recommended_skills=[schemas.SkillTrack.model_validate(item) for item in get_recommended_skills(db)],
     )
 
 
