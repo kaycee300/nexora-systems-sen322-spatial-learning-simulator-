@@ -26,34 +26,31 @@
         <span class="brand-mark">S</span>
         <span class="brand-copy">
           <strong>SkillScape</strong>
-          <span>Spatial learning studio</span>
+          <span>Vocational learning platform</span>
         </span>
       </a>
 
       <nav class="site-nav" aria-label="Primary">
-        <a href="#capabilities">Capabilities</a>
-        <a href="#scenarios">Scenarios</a>
-        <a href="#learning-paths">Learning Paths</a>
-        <a href="#lesson-runtime">Lesson Runtime</a>
+        <a href="#enter-skillscape">Enter</a>
+        <a href="#dashboard">Access</a>
+        <a href="#scenarios">Explore</a>
         <a href="#dashboard">Dashboard</a>
-        <a href="#progress">Progress</a>
       </nav>
     </header>
 
     <main>
-      <section class="hero">
+      <section class="hero hero-minimal" id="enter-skillscape">
         <div class="hero-copy reveal">
-          <p class="eyebrow">Immersive skill training</p>
-          <h1>Train practical skills inside a cinematic 3D workspace.</h1>
+          <p class="eyebrow">Minimal entry</p>
+          <h1>Enter SkillScape.</h1>
           <p class="hero-text">
-            SkillScape blends live scenarios, progress tracking, and a browser-based
-            Three.js environment so learners can rehearse real decisions before they
-            touch real equipment.
+            Choose your access path first. Learners get a personal dashboard and training history.
+            Admins get platform oversight, review queues, and catalog visibility.
           </p>
 
           <div class="hero-actions">
-            <a href="#scenarios" class="btn btn-primary">Browse scenarios</a>
-            <a href="#progress" class="btn btn-secondary">Track a session</a>
+            <a href="#dashboard" class="btn btn-primary" id="enter-platform-button">Enter platform</a>
+            <a href="#scenarios" class="btn btn-secondary">Preview skills</a>
           </div>
 
           <div class="hero-metrics">
@@ -62,28 +59,28 @@
               <span>Skill tracks</span>
             </article>
             <article>
-              <strong>3D</strong>
-              <span>Interactive viewport</span>
+              <strong>User</strong>
+              <span>Personal dashboard</span>
             </article>
             <article>
-              <strong>API</strong>
-              <span>Backend-connected training</span>
+              <strong>Admin</strong>
+              <span>Control room access</span>
             </article>
           </div>
         </div>
 
         <div class="hero-visual reveal">
           <div class="scene-frame">
-            <div class="scene-badge">Realtime simulation</div>
+            <div class="scene-badge">Three.js entry scene</div>
             <canvas id="three-canvas" aria-label="3D simulation preview"></canvas>
             <div class="scene-overlay">
               <div>
-                <p>Active discipline</p>
-                <strong id="scene-discipline">Workshop systems</strong>
+                <p>Entry mode</p>
+                <strong id="scene-discipline">Choose your role</strong>
               </div>
               <div>
-                <p>Focus mode</p>
-                <strong>Observation + decision</strong>
+                <p>Platform state</p>
+                <strong>Learner or admin</strong>
               </div>
             </div>
           </div>
@@ -300,13 +297,18 @@
       <section class="section progress-section reveal" id="dashboard">
         <div class="section-heading">
           <div>
-            <p class="section-kicker">Learner access</p>
-            <h2>Create an account and keep your training history.</h2>
+            <p class="section-kicker">Platform access</p>
+            <h2>Sign up or log in as learner or admin.</h2>
           </div>
           <p class="section-summary">
-            This phase adds learner accounts, persistent progress, and a starter dashboard
-            so SkillScape behaves more like a platform than a static showcase.
+            The first move is role selection. Learners land in their own training dashboard.
+            Admins enter an oversight dashboard for users, reviews, and platform activity.
           </p>
+        </div>
+
+        <div class="auth-role-switch" id="auth-role-switch" aria-label="Access role">
+          <button type="button" class="role-chip is-active" data-role="learner">Learner</button>
+          <button type="button" class="role-chip" data-role="admin">Admin</button>
         </div>
 
         <div class="auth-layout">
@@ -314,11 +316,12 @@
             <div class="auth-panel-header">
               <div>
                 <p class="note-label">Register</p>
-                <h3>Start a learner profile</h3>
+                <h3 id="register-heading">Start a learner profile</h3>
               </div>
             </div>
 
             <form id="register-form" class="progress-form">
+              <input type="hidden" id="register-role" value="learner" />
               <label>
                 Full name
                 <input type="text" id="register-name" placeholder="e.g. Debbie Okafor" required />
@@ -331,11 +334,11 @@
                 Password
                 <input type="password" id="register-password" placeholder="Create a password" required />
               </label>
-              <label>
+              <label id="register-goal-field">
                 Learning goal
                 <input type="text" id="register-goal" placeholder="e.g. Learn electrical installation and device repair" />
               </label>
-              <button type="submit" class="btn btn-primary btn-block">Create account</button>
+              <button type="submit" class="btn btn-primary btn-block" id="register-submit">Create learner account</button>
             </form>
           </div>
 
@@ -343,11 +346,12 @@
             <div class="auth-panel-header">
               <div>
                 <p class="note-label">Login</p>
-                <h3>Return to your workspace</h3>
+                <h3 id="login-heading">Return to your learner workspace</h3>
               </div>
             </div>
 
             <form id="login-form" class="progress-form">
+              <input type="hidden" id="login-role" value="learner" />
               <label>
                 Email
                 <input type="email" id="login-email" placeholder="you@example.com" required />
@@ -356,7 +360,7 @@
                 Password
                 <input type="password" id="login-password" placeholder="Your password" required />
               </label>
-              <button type="submit" class="btn btn-secondary btn-block">Login</button>
+              <button type="submit" class="btn btn-secondary btn-block" id="login-submit">Login as learner</button>
             </form>
 
             <p id="auth-message" class="message" aria-live="polite"></p>
@@ -366,7 +370,7 @@
         <div class="dashboard-shell">
           <div class="dashboard-header">
             <div>
-              <p class="note-label">Learner dashboard</p>
+              <p class="note-label" id="dashboard-kicker">Learner dashboard</p>
               <h3 id="dashboard-title">Sign in to unlock your dashboard</h3>
               <p id="dashboard-subtitle" class="section-summary">
                 Accounts are now supported. Once you log in, your recent sessions and recommended skills will appear here.
@@ -378,27 +382,27 @@
           <div class="dashboard-metrics">
             <article>
               <strong id="dashboard-total">0</strong>
-              <span>Total sessions</span>
+              <span id="dashboard-total-label">Total sessions</span>
             </article>
             <article>
               <strong id="dashboard-completed">0</strong>
-              <span>Completed</span>
+              <span id="dashboard-completed-label">Completed</span>
             </article>
             <article>
               <strong id="dashboard-active">0</strong>
-              <span>In progress</span>
+              <span id="dashboard-active-label">In progress</span>
             </article>
             <article>
               <strong id="dashboard-passed">0</strong>
-              <span>Passed simulations</span>
+              <span id="dashboard-passed-label">Passed simulations</span>
             </article>
             <article>
               <strong id="dashboard-retries">0</strong>
-              <span>Retries used</span>
+              <span id="dashboard-retries-label">Retries used</span>
             </article>
             <article>
               <strong id="dashboard-failed">0</strong>
-              <span>Needs review</span>
+              <span id="dashboard-failed-label">Needs review</span>
             </article>
           </div>
 
@@ -411,21 +415,21 @@
 
           <div class="dashboard-layout">
             <div class="progress-panel">
-              <p class="note-label">Recent activity</p>
+              <p class="note-label" id="dashboard-panel-one-label">Recent activity</p>
               <div id="dashboard-activity" class="dashboard-list">
                 <div class="dashboard-item empty-state">No learner data yet.</div>
               </div>
             </div>
 
             <div class="progress-panel">
-              <p class="note-label">Recommended skills</p>
+              <p class="note-label" id="dashboard-panel-two-label">Recommended skills</p>
               <div id="dashboard-recommendations" class="dashboard-list">
                 <div class="dashboard-item empty-state">Your recommended tracks will appear here after login.</div>
               </div>
             </div>
 
             <div class="progress-panel">
-              <p class="note-label">Recommended courses</p>
+              <p class="note-label" id="dashboard-panel-three-label">Recommended courses</p>
               <div id="dashboard-courses" class="dashboard-list">
                 <div class="dashboard-item empty-state">Your recommended courses will appear here after login.</div>
               </div>
