@@ -1019,3 +1019,61 @@ h2 {
     padding-top: 2.5rem;
   }
 }
+
+/* Modal Styles */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: var(--bg-soft);
+  padding: 2rem;
+  border-radius: var(--radius-lg);
+  max-width: 500px;
+  width: 90%;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.modal-content h2 {
+  margin-bottom: 1rem;
+}
+
+.role-options {
+  display: flex;
+  gap: 1rem;
+  margin: 2rem 0;
+  flex-direction: column;
+}
+
+.role-btn {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 1.5rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.role-btn:hover {
+  background: var(--panel-strong);
+  border-color: var(--amber);
+}
+
+.role-btn h3 {
+  margin: 0 0 0.5rem 0;
+}
+
+.role-btn p {
+  margin: 0;
+  color: var(--muted);
+}

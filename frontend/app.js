@@ -7,6 +7,35 @@ let currentLessonRuntime = null;
 let currentLessonSession = null;
 let lessonSimulation = null;
 let simulationState = null;
+
+// Modal handling
+document.getElementById('enter-platform-button').addEventListener('click', () => {
+  document.getElementById('role-modal').style.display = 'flex';
+});
+
+document.getElementById('close-modal').addEventListener('click', () => {
+  document.getElementById('role-modal').style.display = 'none';
+});
+
+document.querySelectorAll('.role-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    const role = e.currentTarget.dataset.role;
+    localStorage.setItem('skillscape-role', role);
+    if (role === 'user') {
+      window.location.href = 'user.html';
+    } else if (role === 'admin') {
+      window.location.href = 'admin.html';
+    }
+    document.getElementById('role-modal').style.display = 'none';
+  });
+});
+
+// Close modal on outside click
+document.getElementById('role-modal').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('role-modal')) {
+    document.getElementById('role-modal').style.display = 'none';
+  }
+});
 const SIMULATION_BLUEPRINTS = {
   "electrical-installation": createBlueprint("Playable simulation: electrical wiring", "electrical", ["Inspect panel", "Pick multimeter", "Identify live wire", "Secure circuit"], "Inspect the panel first, then use the multimeter before isolating the live wire."),
   "solar-installation": createBlueprint("Playable simulation: solar setup", "solar", ["Inspect roof layout", "Pick mounting guide", "Align panel row", "Confirm inverter route"], "Survey the layout before touching mounting or wiring."),
