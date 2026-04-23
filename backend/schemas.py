@@ -229,6 +229,10 @@ class LearnerDashboard(BaseModel):
     completed_lessons: int
     active_lessons: int
     active_simulation_sessions: int
+    passed_simulation_sessions: int
+    failed_simulation_sessions: int
+    retry_count_total: int
+    simulation_status_badge: str
     recent_activity: list[Progress]
     recommended_skills: list[SkillTrack]
     recommended_courses: list[Course]

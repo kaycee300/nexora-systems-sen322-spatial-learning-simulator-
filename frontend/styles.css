@@ -591,6 +591,43 @@ h2 {
   color: var(--muted);
 }
 
+.dashboard-status-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+
+.dashboard-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 0.82rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 248, 241, 0.06);
+  color: var(--muted-strong);
+  font-size: 0.82rem;
+}
+
+.dashboard-badge-steady {
+  background: rgba(255, 181, 92, 0.12);
+  color: #ffd08b;
+}
+
+.dashboard-badge-pass {
+  background: rgba(98, 210, 182, 0.12);
+  color: #9cf2d5;
+}
+
+.dashboard-badge-retry {
+  background: rgba(255, 214, 140, 0.12);
+  color: #ffd48b;
+}
+
+.dashboard-badge-review {
+  background: rgba(255, 136, 118, 0.12);
+  color: #ffb1a5;
+}
+
 .dashboard-layout {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }

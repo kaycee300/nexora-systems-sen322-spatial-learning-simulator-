@@ -548,6 +548,27 @@ def _split_learning_steps(path: str):
     return [step.strip() for step in path.split("->") if step.strip()]
 
 
+def _extract_retry_count(db: Session, session: models.LessonSession):
+    notes = session.notes or ""
+    match = re.search(r"retries:(\d+)", notes)
+    note_retries = int(match.group(1)) if match else 0
+    event_retries = sum(1 for event in get_lesson_events(db, session.id) if event.event_type == "retry_started")
+
+    return max(note_retries, event_retries)
+
+
+def _build_simulation_status_badge(*, passed_simulation_sessions: int, failed_simulation_sessions: int, retry_count_total: int):
+    if passed_simulation_sessions >= 3 and failed_simulation_sessions == 0:
+        return "On a clean streak"
+    if failed_simulation_sessions == 0 and retry_count_total <= 1:
+        return "Steady momentum"
+    if failed_simulation_sessions >= passed_simulation_sessions and failed_simulation_sessions > 0:
+        return "Needs another rep"
+    if retry_count_total >= 4:
+        return "Persistence building"
+    return "Hands-on progress"
+
+
 def _build_course_seed(track_data: dict):
     steps = _split_learning_steps(track_data["learning_path"])
     if not steps:
@@ -821,6 +842,15 @@ def get_user_active_sessions(db: Session, user_id: int):
     )
 
 
+def get_user_lesson_sessions(db: Session, user_id: int):
+    return (
+        db.query(models.LessonSession)
+        .filter(models.LessonSession.user_id == user_id)
+        .order_by(models.LessonSession.started_at.desc(), models.LessonSession.id.desc())
+        .all()
+    )
+
+
 def _find_skill_for_course(db: Session, course: models.Course):
     return db.query(models.SkillTrack).filter(models.SkillTrack.id == course.skill_id).first()
 
@@ -930,10 +960,16 @@ def build_learner_dashboard(db: Session, user: models.User):
     activity = get_user_progress(db, user.id)
     lesson_completions = get_user_lesson_completions(db, user.id)
     active_sessions = get_user_active_sessions(db, user.id)
+    lesson_sessions = get_user_lesson_sessions(db, user.id)
     completed_sessions = sum(1 for item in activity if item.status == "Completed")
     in_progress_sessions = sum(1 for item in activity if item.status == "In progress")
     completed_lessons = sum(1 for item in lesson_completions if item.status == "Completed")
     active_lessons = sum(1 for item in lesson_completions if item.status != "Completed")
+    passed_simulation_sessions = sum(1 for item in lesson_sessions if (item.status or "").lower() == "completed")
+    failed_simulation_sessions = sum(
+        1 for item in lesson_sessions if (item.status or "").lower() in {"needs review", "failed"}
+    )
+    retry_count_total = sum(_extract_retry_count(db, item) for item in lesson_sessions)
 
     return schemas.LearnerDashboard(
         user=build_user_profile(user),
@@ -943,6 +979,14 @@ def build_learner_dashboard(db: Session, user: models.User):
         completed_lessons=completed_lessons,
         active_lessons=active_lessons,
         active_simulation_sessions=len(active_sessions),
+        passed_simulation_sessions=passed_simulation_sessions,
+        failed_simulation_sessions=failed_simulation_sessions,
+        retry_count_total=retry_count_total,
+        simulation_status_badge=_build_simulation_status_badge(
+            passed_simulation_sessions=passed_simulation_sessions,
+            failed_simulation_sessions=failed_simulation_sessions,
+            retry_count_total=retry_count_total,
+        ),
         recent_activity=[schemas.Progress.model_validate(item) for item in activity[:6]],
         recommended_skills=[schemas.SkillTrack.model_validate(item) for item in get_recommended_skills(db)],
         recommended_courses=[schemas.Course.model_validate(item) for item in get_recommended_courses(db)],
@@ -981,7 +1025,7 @@ def complete_lesson_session(db: Session, session: models.LessonSession, payload:
     session.status = payload.status
     session.score = payload.score
     session.notes = payload.notes
-    if payload.status == "Completed":
+    if payload.status in {"Completed", "Needs review", "Failed"}:
         session.completed_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(session)

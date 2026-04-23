@@ -247,7 +247,7 @@ function createInitialSimulationState() {
   return {
     actions: [],
     score: 0,
-    message: "Start the lesson session, then inspect the panel first.",
+    message: "Start the lesson session to unlock the interactive workflow.",
     panelInspected: false,
     sinkInspected: false,
     toolPicked: false,
@@ -260,6 +260,108 @@ function createInitialSimulationState() {
     failed: false,
     retries: 0,
   };
+}
+
+function formatSimulationEventTitle(eventType) {
+  if (eventType === "sequence_error") {
+    return "Sequence warning";
+  }
+  if (eventType === "retry_started") {
+    return "Retry started";
+  }
+  return eventType.replace(/_/g, " ");
+}
+
+function buildSimulationEventLog(events) {
+  return events.map((event) => ({
+    title: formatSimulationEventTitle(event.event_type),
+    detail: event.event_value || "runtime event",
+  }));
+}
+
+function applySimulationProgressForAction(action) {
+  const instructions = getSimulationBlueprint(currentLessonRuntime?.skill?.slug)?.instructions.map((item) => item.action) || [];
+
+  if (isElectricalRuntime(currentLessonRuntime)) {
+    if (action === instructions[0]) {
+      simulationState.panelInspected = true;
+    } else if (action === instructions[1]) {
+      simulationState.toolPicked = true;
+    } else if (action === instructions[2]) {
+      simulationState.wireIdentified = true;
+    } else if (action === instructions[3]) {
+      simulationState.circuitSecured = true;
+    }
+  } else if (isPlumbingRuntime(currentLessonRuntime)) {
+    if (action === instructions[0]) {
+      simulationState.sinkInspected = true;
+    } else if (action === instructions[1]) {
+      simulationState.toolPicked = true;
+    } else if (action === instructions[2]) {
+      simulationState.trapTightened = true;
+    } else if (action === instructions[3]) {
+      simulationState.leakTested = true;
+    }
+  }
+}
+
+function hydrateSimulationStateFromSession(runtime, sessionDetail) {
+  const blueprint = getSimulationBlueprint(runtime.skill.slug);
+  simulationState = createInitialSimulationState();
+  simulationState.message = blueprint?.initialMessage || "Session resumed.";
+  simulationState.eventLog = buildSimulationEventLog(sessionDetail.events);
+
+  if (!blueprint) {
+    return;
+  }
+
+  let actionsForAttempt = [];
+  let mistakesForAttempt = 0;
+
+  sessionDetail.events.forEach((event) => {
+    if (event.event_type === "retry_started") {
+      simulationState.retries += 1;
+      actionsForAttempt = [];
+      mistakesForAttempt = 0;
+      simulationState.failed = false;
+      simulationState.panelInspected = false;
+      simulationState.sinkInspected = false;
+      simulationState.toolPicked = false;
+      simulationState.wireIdentified = false;
+      simulationState.circuitSecured = false;
+      simulationState.trapTightened = false;
+      simulationState.leakTested = false;
+      return;
+    }
+
+    if (event.event_type === "sequence_error") {
+      mistakesForAttempt += 1;
+      return;
+    }
+
+    if (blueprint.instructions.some((item) => item.action === event.event_type)) {
+      actionsForAttempt.push(event.event_type);
+    }
+  });
+
+  simulationState.actions = [...new Set(actionsForAttempt)];
+  simulationState.mistakes = mistakesForAttempt;
+  simulationState.failed = mistakesForAttempt >= 2 || ["Needs review", "Failed"].includes(sessionDetail.status);
+  simulationState.score = Math.max(0, simulationState.actions.length * 25 - simulationState.mistakes * 10);
+  simulationState.actions.forEach((action) => applySimulationProgressForAction(action));
+
+  if (sessionDetail.status === "Completed") {
+    simulationState.message = "Session completed. Review the sequence and start another lesson when ready.";
+  } else if (simulationState.failed) {
+    simulationState.message = "Attempt needs review. Reset the simulation to try the path again.";
+  } else if (simulationState.actions.length) {
+    const nextStep = blueprint.instructions[simulationState.actions.length];
+    simulationState.message = nextStep
+      ? `Session resumed. Continue with ${nextStep.label.toLowerCase()}.`
+      : "Sequence complete. You can finish the lesson now.";
+  } else if (sessionDetail.events.length) {
+    simulationState.message = "Session resumed. Continue the safe sequence.";
+  }
 }
 
 function setSimulationMessage(text, tone = "default") {
@@ -858,12 +960,34 @@ async function runSimulationAction(action) {
 
 async function resetSimulation() {
   const previousRetries = simulationState?.retries || 0;
+  const failedAttempt = Boolean(simulationState?.failed);
+  const sessionToReset = currentLessonSession;
+  const retryCount = previousRetries + 1;
+
+  if (sessionToReset) {
+    try {
+      await logLessonEvent(sessionToReset.id, {
+        event_type: "retry_started",
+        event_value: `attempt:${retryCount}`,
+      });
+
+      if (failedAttempt) {
+        await completeLessonSession(sessionToReset.id, {
+          status: "Needs review",
+          score: simulationState?.score || 0,
+          notes: `${simulationState?.actions.join(", ") || "failed_attempt"} | retries:${retryCount}`,
+        });
+        await refreshDashboard();
+      }
+    } catch (error) {
+      setSimulationMessage(error.message, "error");
+    }
+  }
+
   simulationState = createInitialSimulationState();
-  simulationState.retries = previousRetries + 1;
-  currentLessonSession = null;
-  document.getElementById("runtime-status-pill").textContent = "Status: not started";
-  renderSimulationHints();
-  renderSimulationEventFeed();
+  simulationState.retries = retryCount;
+  currentLessonSession = failedAttempt ? null : currentLessonSession;
+  document.getElementById("runtime-status-pill").textContent = currentLessonSession ? `Status: ${currentLessonSession.status}` : "Status: not started";
   appendSimulationEvent("Retry started", `Attempt ${simulationState.retries} is ready.`);
   renderSimulationState();
 }
@@ -903,15 +1027,11 @@ function renderLessonRuntime(runtime) {
     if (runtime.active_session) {
       fetchLessonSession(runtime.active_session.id)
         .then((sessionDetail) => {
-          simulationState.eventLog = sessionDetail.events.map((event) => ({
-            title: event.event_type.replace(/_/g, " "),
-            detail: event.event_value || "runtime event",
-          }));
-          renderSimulationEventFeed();
+          hydrateSimulationStateFromSession(runtime, sessionDetail);
+          renderSimulationState();
         })
         .catch(() => {});
       simulationState.message = "Session resumed. Continue the safe sequence.";
-      appendSimulationEvent("Session resumed", "Continue interacting with the scene to finish the task.");
     }
     renderSimulationState();
   } else {
@@ -1070,6 +1190,13 @@ function renderDashboardState(dashboard) {
   document.getElementById("dashboard-total").textContent = String(dashboard.total_progress_entries);
   document.getElementById("dashboard-completed").textContent = String(dashboard.completed_lessons || dashboard.completed_sessions);
   document.getElementById("dashboard-active").textContent = String(dashboard.active_simulation_sessions || dashboard.active_lessons || dashboard.in_progress_sessions);
+  document.getElementById("dashboard-passed").textContent = String(dashboard.passed_simulation_sessions || 0);
+  document.getElementById("dashboard-retries").textContent = String(dashboard.retry_count_total || 0);
+  document.getElementById("dashboard-failed").textContent = String(dashboard.failed_simulation_sessions || 0);
+  document.getElementById("dashboard-status-badge").textContent = dashboard.simulation_status_badge || "Hands-on progress";
+  document.getElementById("dashboard-pass-badge").textContent = `${dashboard.passed_simulation_sessions || 0} passed runs`;
+  document.getElementById("dashboard-retry-badge").textContent = `${dashboard.retry_count_total || 0} retries logged`;
+  document.getElementById("dashboard-review-badge").textContent = `${dashboard.failed_simulation_sessions || 0} sessions need review`;
 
   const activityEl = document.getElementById("dashboard-activity");
   activityEl.innerHTML = "";
@@ -1124,6 +1251,13 @@ function renderLoggedOutDashboard() {
   document.getElementById("dashboard-total").textContent = "0";
   document.getElementById("dashboard-completed").textContent = "0";
   document.getElementById("dashboard-active").textContent = "0";
+  document.getElementById("dashboard-passed").textContent = "0";
+  document.getElementById("dashboard-retries").textContent = "0";
+  document.getElementById("dashboard-failed").textContent = "0";
+  document.getElementById("dashboard-status-badge").textContent = "Hands-on progress";
+  document.getElementById("dashboard-pass-badge").textContent = "0 passed runs";
+  document.getElementById("dashboard-retry-badge").textContent = "0 retries logged";
+  document.getElementById("dashboard-review-badge").textContent = "0 sessions need review";
   document.getElementById("dashboard-activity").innerHTML =
     "<div class=\"dashboard-item empty-state\">No learner data yet.</div>";
   document.getElementById("dashboard-recommendations").innerHTML =
@@ -1568,11 +1702,12 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
     await updateLessonCompletion("Completed");
     if (currentLessonSession) {
-      await completeLessonSession(currentLessonSession.id, {
+      currentLessonSession = await completeLessonSession(currentLessonSession.id, {
         status: "Completed",
         score: Math.max(0, (simulationState?.score || 100) - ((simulationState?.retries || 0) * 5)),
         notes: `${simulationState?.actions.join(", ") || "completed"} | retries:${simulationState?.retries || 0}`,
       });
+      await refreshDashboard();
     }
   });
   document.getElementById("start-lesson-button").addEventListener("click", () => updateLessonCompletion("In progress"));
