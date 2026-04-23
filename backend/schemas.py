@@ -196,6 +196,7 @@ class Progress(ProgressCreate):
 
 
 class UserCreate(BaseModel):
+    role: str = "learner"
     name: str
     email: str
     password: str
@@ -203,12 +204,14 @@ class UserCreate(BaseModel):
 
 
 class UserLogin(BaseModel):
+    role: str = "learner"
     email: str
     password: str
 
 
 class UserProfile(BaseModel):
     id: int
+    role: str
     name: str
     email: str
     learning_goal: str | None = None
@@ -236,6 +239,20 @@ class LearnerDashboard(BaseModel):
     recent_activity: list[Progress]
     recommended_skills: list[SkillTrack]
     recommended_courses: list[Course]
+
+
+class AdminDashboard(BaseModel):
+    admin: UserProfile
+    total_users: int
+    total_learners: int
+    total_admins: int
+    total_skill_tracks: int
+    total_courses: int
+    total_lessons: int
+    total_runtime_sessions: int
+    pending_reviews: int
+    recent_signups: list[UserProfile]
+    recent_activity: list[Progress]
 
 
 class Message(BaseModel):

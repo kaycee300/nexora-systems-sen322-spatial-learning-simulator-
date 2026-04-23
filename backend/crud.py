@@ -524,10 +524,11 @@ def get_lesson_events(db: Session, session_id: int):
 
 def create_user(db: Session, payload: schemas.UserCreate):
     user = models.User(
+        role=_normalize_role(payload.role),
         name=payload.name.strip(),
         email=_normalize_email(payload.email),
         password_hash=_hash_password(payload.password),
-        learning_goal=payload.learning_goal.strip() if payload.learning_goal else None,
+        learning_goal=payload.learning_goal.strip() if payload.learning_goal and _normalize_role(payload.role) == "learner" else None,
     )
     db.add(user)
     db.commit()
@@ -539,6 +540,8 @@ def authenticate_user(db: Session, payload: schemas.UserLogin):
     user = get_user_by_email(db, payload.email)
     if user is None:
         return None
+    if user.role != _normalize_role(payload.role):
+        return None
     if not _verify_password(payload.password, user.password_hash):
         return None
     return user
@@ -546,6 +549,13 @@ def authenticate_user(db: Session, payload: schemas.UserLogin):
 
 def _split_learning_steps(path: str):
     return [step.strip() for step in path.split("->") if step.strip()]
+
+
+def _normalize_role(role: str | None):
+    normalized = (role or "learner").strip().lower()
+    if normalized not in {"learner", "admin"}:
+        return "learner"
+    return normalized
 
 
 def _extract_retry_count(db: Session, session: models.LessonSession):
@@ -711,6 +721,10 @@ def get_progress(db: Session):
     return db.query(models.UserProgress).order_by(models.UserProgress.updated_at.desc()).all()
 
 
+def get_users(db: Session):
+    return db.query(models.User).order_by(models.User.created_at.desc(), models.User.id.desc()).all()
+
+
 def get_user_progress(db: Session, user_id: int):
     return (
         db.query(models.UserProgress)
@@ -788,6 +802,36 @@ def build_course_detail(db: Session, course: models.Course):
 
 def build_user_profile(user: models.User):
     return schemas.UserProfile.model_validate(user)
+
+
+def build_admin_dashboard(db: Session, user: models.User):
+    users = get_users(db)
+    total_users = len(users)
+    total_learners = sum(1 for item in users if item.role == "learner")
+    total_admins = sum(1 for item in users if item.role == "admin")
+    total_skill_tracks = len(get_skill_tracks(db))
+    total_courses = len(get_courses(db))
+    total_lessons = db.query(models.Lesson).count()
+    total_runtime_sessions = db.query(models.LessonSession).count()
+    pending_reviews = (
+        db.query(models.LessonSession)
+        .filter(models.LessonSession.status.in_(["Needs review", "Failed"]))
+        .count()
+    )
+
+    return schemas.AdminDashboard(
+        admin=build_user_profile(user),
+        total_users=total_users,
+        total_learners=total_learners,
+        total_admins=total_admins,
+        total_skill_tracks=total_skill_tracks,
+        total_courses=total_courses,
+        total_lessons=total_lessons,
+        total_runtime_sessions=total_runtime_sessions,
+        pending_reviews=pending_reviews,
+        recent_signups=[build_user_profile(item) for item in users[:6]],
+        recent_activity=[schemas.Progress.model_validate(item) for item in get_progress(db)[:6]],
+    )
 
 
 def get_recommended_skills(db: Session, limit: int = 6):

@@ -72,6 +72,12 @@ def ensure_schema():
         with engine.begin() as connection:
             connection.execute(text("ALTER TABLE user_progress ADD COLUMN user_id INTEGER"))
 
+    user_columns = {column["name"] for column in inspector.get_columns("users")}
+    if "role" not in user_columns:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE users ADD COLUMN role VARCHAR DEFAULT 'learner'"))
+            connection.execute(text("UPDATE users SET role = 'learner' WHERE role IS NULL OR role = ''"))
+
 
 ensure_schema()
 
@@ -113,7 +119,19 @@ async def read_learner_dashboard(user_id: int, db: Session = Depends(get_db)):
     user = crud.get_user(db, user_id)
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
+    if user.role != "learner":
+        raise HTTPException(status_code=403, detail="Learner dashboard is only available to learner accounts")
     return crud.build_learner_dashboard(db, user)
+
+
+@app.get("/admins/{user_id}/dashboard", response_model=schemas.AdminDashboard)
+async def read_admin_dashboard(user_id: int, db: Session = Depends(get_db)):
+    user = crud.get_user(db, user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin dashboard is only available to admin accounts")
+    return crud.build_admin_dashboard(db, user)
 
 
 @app.get("/scenarios", response_model=list[schemas.Scenario])
