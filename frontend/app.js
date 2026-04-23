@@ -2,6 +2,7 @@ const BACKEND_URL = "http://localhost:8000";
 const STORAGE_KEY = "skillscape-current-user";
 
 let currentUser = null;
+let selectedAuthRole = "learner";
 let currentLessonRuntime = null;
 let currentLessonSession = null;
 let lessonSimulation = null;
@@ -1160,13 +1161,33 @@ async function loginUser(payload) {
 }
 
 async function fetchDashboard(userId) {
-  const response = await fetch(`${BACKEND_URL}/users/${userId}/dashboard`);
+  const route = currentUser?.role === "admin" ? `/admins/${userId}/dashboard` : `/users/${userId}/dashboard`;
+  const response = await fetch(`${BACKEND_URL}${route}`);
   const data = await response.json();
 
   if (!response.ok) {
     throw new Error(data.detail || "Unable to load dashboard.");
   }
   return data;
+}
+
+function setAuthRole(role) {
+  selectedAuthRole = role === "admin" ? "admin" : "learner";
+  document.getElementById("register-role").value = selectedAuthRole;
+  document.getElementById("login-role").value = selectedAuthRole;
+  document.getElementById("register-heading").textContent =
+    selectedAuthRole === "admin" ? "Create an admin account" : "Start a learner profile";
+  document.getElementById("login-heading").textContent =
+    selectedAuthRole === "admin" ? "Return to the admin control room" : "Return to your learner workspace";
+  document.getElementById("register-submit").textContent =
+    selectedAuthRole === "admin" ? "Create admin account" : "Create learner account";
+  document.getElementById("login-submit").textContent =
+    selectedAuthRole === "admin" ? "Login as admin" : "Login as learner";
+  document.getElementById("register-goal-field").classList.toggle("auth-hidden", selectedAuthRole === "admin");
+  document.querySelectorAll(".role-chip").forEach((chip) => {
+    chip.classList.toggle("is-active", chip.dataset.role === selectedAuthRole);
+  });
+  renderLoggedOutDashboard();
 }
 
 function syncProgressIdentity() {
@@ -1184,9 +1205,19 @@ function syncProgressIdentity() {
 }
 
 function renderDashboardState(dashboard) {
+  document.getElementById("dashboard-kicker").textContent = "Learner dashboard";
   document.getElementById("dashboard-title").textContent = `Welcome back, ${dashboard.user.name}`;
   document.getElementById("dashboard-subtitle").textContent =
     dashboard.user.learning_goal || "Your learning profile is active. Pick a scenario and keep building momentum.";
+  document.getElementById("dashboard-total-label").textContent = "Total sessions";
+  document.getElementById("dashboard-completed-label").textContent = "Completed";
+  document.getElementById("dashboard-active-label").textContent = "In progress";
+  document.getElementById("dashboard-passed-label").textContent = "Passed simulations";
+  document.getElementById("dashboard-retries-label").textContent = "Retries used";
+  document.getElementById("dashboard-failed-label").textContent = "Needs review";
+  document.getElementById("dashboard-panel-one-label").textContent = "Recent activity";
+  document.getElementById("dashboard-panel-two-label").textContent = "Recommended skills";
+  document.getElementById("dashboard-panel-three-label").textContent = "Recommended courses";
   document.getElementById("dashboard-total").textContent = String(dashboard.total_progress_entries);
   document.getElementById("dashboard-completed").textContent = String(dashboard.completed_lessons || dashboard.completed_sessions);
   document.getElementById("dashboard-active").textContent = String(dashboard.active_simulation_sessions || dashboard.active_lessons || dashboard.in_progress_sessions);
@@ -1244,10 +1275,99 @@ function renderDashboardState(dashboard) {
   }
 }
 
-function renderLoggedOutDashboard() {
-  document.getElementById("dashboard-title").textContent = "Sign in to unlock your dashboard";
+function renderAdminDashboardState(dashboard) {
+  document.getElementById("dashboard-kicker").textContent = "Admin dashboard";
+  document.getElementById("dashboard-title").textContent = `Admin control room, ${dashboard.admin.name}`;
   document.getElementById("dashboard-subtitle").textContent =
-    "Accounts are now supported. Once you log in, your recent sessions and recommended skills will appear here.";
+    "Platform oversight is live. Review user growth, pending practice reviews, and recent platform activity from one place.";
+  document.getElementById("dashboard-total-label").textContent = "Total users";
+  document.getElementById("dashboard-completed-label").textContent = "Learners";
+  document.getElementById("dashboard-active-label").textContent = "Admins";
+  document.getElementById("dashboard-passed-label").textContent = "Skill tracks";
+  document.getElementById("dashboard-retries-label").textContent = "Courses";
+  document.getElementById("dashboard-failed-label").textContent = "Pending reviews";
+  document.getElementById("dashboard-panel-one-label").textContent = "Recent platform activity";
+  document.getElementById("dashboard-panel-two-label").textContent = "Recent signups";
+  document.getElementById("dashboard-panel-three-label").textContent = "System overview";
+  document.getElementById("dashboard-total").textContent = String(dashboard.total_users);
+  document.getElementById("dashboard-completed").textContent = String(dashboard.total_learners);
+  document.getElementById("dashboard-active").textContent = String(dashboard.total_admins);
+  document.getElementById("dashboard-passed").textContent = String(dashboard.total_skill_tracks);
+  document.getElementById("dashboard-retries").textContent = String(dashboard.total_courses);
+  document.getElementById("dashboard-failed").textContent = String(dashboard.pending_reviews);
+  document.getElementById("dashboard-status-badge").textContent = "Admin view live";
+  document.getElementById("dashboard-pass-badge").textContent = `${dashboard.total_runtime_sessions} simulation sessions`;
+  document.getElementById("dashboard-retry-badge").textContent = `${dashboard.total_lessons} lessons in catalog`;
+  document.getElementById("dashboard-review-badge").textContent = `${dashboard.pending_reviews} items need review`;
+
+  const activityEl = document.getElementById("dashboard-activity");
+  activityEl.innerHTML = "";
+  if (!dashboard.recent_activity.length) {
+    activityEl.innerHTML = "<div class=\"dashboard-item empty-state\">No platform activity yet.</div>";
+  } else {
+    dashboard.recent_activity.forEach((item) => {
+      const card = document.createElement("div");
+      card.className = "dashboard-item";
+      card.innerHTML = `
+        <strong>${item.student_name}</strong>
+        <p>Scenario ID: ${item.scenario_id}</p>
+        <span>${item.status}</span>
+      `;
+      activityEl.appendChild(card);
+    });
+  }
+
+  const signupsEl = document.getElementById("dashboard-recommendations");
+  signupsEl.innerHTML = "";
+  if (!dashboard.recent_signups.length) {
+    signupsEl.innerHTML = "<div class=\"dashboard-item empty-state\">No recent signups yet.</div>";
+  } else {
+    dashboard.recent_signups.forEach((user) => {
+      const card = document.createElement("div");
+      card.className = "dashboard-item";
+      card.innerHTML = `
+        <strong>${user.name}</strong>
+        <p>${user.email}</p>
+        <span>${user.role}</span>
+      `;
+      signupsEl.appendChild(card);
+    });
+  }
+
+  const overviewEl = document.getElementById("dashboard-courses");
+  overviewEl.innerHTML = `
+    <div class="dashboard-item">
+      <strong>${dashboard.total_skill_tracks} tracks</strong>
+      <p>Active vocational catalog available to learners.</p>
+      <span>Catalog</span>
+    </div>
+    <div class="dashboard-item">
+      <strong>${dashboard.total_courses} courses</strong>
+      <p>Structured learning paths currently seeded on the platform.</p>
+      <span>Curriculum</span>
+    </div>
+    <div class="dashboard-item">
+      <strong>${dashboard.total_runtime_sessions} sessions</strong>
+      <p>Total simulation runs recorded across learner activity.</p>
+      <span>Runtime</span>
+    </div>
+  `;
+}
+
+function renderLoggedOutDashboard() {
+  const isAdmin = selectedAuthRole === "admin";
+  document.getElementById("dashboard-kicker").textContent = isAdmin ? "Admin dashboard" : "Learner dashboard";
+  document.getElementById("dashboard-title").textContent = isAdmin ? "Sign in to unlock the admin dashboard" : "Sign in to unlock your dashboard";
+  document.getElementById("dashboard-subtitle").textContent =
+    isAdmin
+      ? "Admin accounts get an oversight view for users, curriculum, sessions, and review items."
+      : "Learner accounts get a personal workspace with progress history, coaching, and recommended tracks.";
+  document.getElementById("dashboard-total-label").textContent = isAdmin ? "Total users" : "Total sessions";
+  document.getElementById("dashboard-completed-label").textContent = isAdmin ? "Learners" : "Completed";
+  document.getElementById("dashboard-active-label").textContent = isAdmin ? "Admins" : "In progress";
+  document.getElementById("dashboard-passed-label").textContent = isAdmin ? "Skill tracks" : "Passed simulations";
+  document.getElementById("dashboard-retries-label").textContent = isAdmin ? "Courses" : "Retries used";
+  document.getElementById("dashboard-failed-label").textContent = isAdmin ? "Pending reviews" : "Needs review";
   document.getElementById("dashboard-total").textContent = "0";
   document.getElementById("dashboard-completed").textContent = "0";
   document.getElementById("dashboard-active").textContent = "0";
@@ -1255,15 +1375,18 @@ function renderLoggedOutDashboard() {
   document.getElementById("dashboard-retries").textContent = "0";
   document.getElementById("dashboard-failed").textContent = "0";
   document.getElementById("dashboard-status-badge").textContent = "Hands-on progress";
-  document.getElementById("dashboard-pass-badge").textContent = "0 passed runs";
-  document.getElementById("dashboard-retry-badge").textContent = "0 retries logged";
-  document.getElementById("dashboard-review-badge").textContent = "0 sessions need review";
+  document.getElementById("dashboard-pass-badge").textContent = isAdmin ? "0 simulation sessions" : "0 passed runs";
+  document.getElementById("dashboard-retry-badge").textContent = isAdmin ? "0 lessons in catalog" : "0 retries logged";
+  document.getElementById("dashboard-review-badge").textContent = isAdmin ? "0 items need review" : "0 sessions need review";
+  document.getElementById("dashboard-panel-one-label").textContent = isAdmin ? "Recent platform activity" : "Recent activity";
+  document.getElementById("dashboard-panel-two-label").textContent = isAdmin ? "Recent signups" : "Recommended skills";
+  document.getElementById("dashboard-panel-three-label").textContent = isAdmin ? "System overview" : "Recommended courses";
   document.getElementById("dashboard-activity").innerHTML =
-    "<div class=\"dashboard-item empty-state\">No learner data yet.</div>";
+    `<div class="dashboard-item empty-state">${isAdmin ? "No platform activity yet." : "No learner data yet."}</div>`;
   document.getElementById("dashboard-recommendations").innerHTML =
-    "<div class=\"dashboard-item empty-state\">Your recommended tracks will appear here after login.</div>";
+    `<div class="dashboard-item empty-state">${isAdmin ? "Recent signups will appear here after admin login." : "Your recommended tracks will appear here after login."}</div>`;
   document.getElementById("dashboard-courses").innerHTML =
-    "<div class=\"dashboard-item empty-state\">Your recommended courses will appear here after login.</div>";
+    `<div class="dashboard-item empty-state">${isAdmin ? "Platform overview will appear here after admin login." : "Your recommended courses will appear here after login."}</div>`;
 }
 
 function requireSignedInForLessonAction() {
@@ -1284,7 +1407,11 @@ async function refreshDashboard() {
 
   try {
     const dashboard = await fetchDashboard(currentUser.id);
-    renderDashboardState(dashboard);
+    if (currentUser.role === "admin") {
+      renderAdminDashboardState(dashboard);
+    } else {
+      renderDashboardState(dashboard);
+    }
   } catch (error) {
     setMessage(error.message, "error", "auth-message");
   }
@@ -1611,6 +1738,7 @@ async function handleRegister(event) {
 
   try {
     const response = await registerUser({
+      role: document.getElementById("register-role").value,
       name: document.getElementById("register-name").value.trim(),
       email: document.getElementById("register-email").value.trim(),
       password: document.getElementById("register-password").value,
@@ -1631,6 +1759,7 @@ async function handleLogin(event) {
 
   try {
     const response = await loginUser({
+      role: document.getElementById("login-role").value,
       email: document.getElementById("login-email").value.trim(),
       password: document.getElementById("login-password").value,
     });
@@ -1654,6 +1783,9 @@ function handleLogout() {
 window.addEventListener("DOMContentLoaded", async () => {
   initScene();
   loadCurrentUser();
+  if (currentUser?.role === "admin") {
+    selectedAuthRole = "admin";
+  }
   syncProgressIdentity();
   renderLoggedOutDashboard();
   initLessonPlayer();
@@ -1682,6 +1814,12 @@ window.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("register-form").addEventListener("submit", handleRegister);
   document.getElementById("login-form").addEventListener("submit", handleLogin);
   document.getElementById("logout-button").addEventListener("click", handleLogout);
+  document.querySelectorAll(".role-chip").forEach((chip) => {
+    chip.addEventListener("click", () => setAuthRole(chip.dataset.role));
+  });
+  document.getElementById("enter-platform-button").addEventListener("click", () => {
+    document.getElementById("dashboard").scrollIntoView({ behavior: "smooth" });
+  });
   document.getElementById("start-session-button").addEventListener("click", async () => {
     try {
       await ensureLessonSession();
@@ -1712,4 +1850,5 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
   document.getElementById("start-lesson-button").addEventListener("click", () => updateLessonCompletion("In progress"));
   document.getElementById("progress-form").addEventListener("submit", submitProgress);
+  setAuthRole(selectedAuthRole);
 });
