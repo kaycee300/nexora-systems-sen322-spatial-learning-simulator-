@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SkillScape | Admin Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <a href="index.html" class="brand">
+      <span class="brand-mark">S</span>
+      <span class="brand-copy">
+        <strong>SkillScape</strong>
+        <span>Vocational learning platform</span>
+      </span>
+    </a>
+    <nav class="site-nav">
+      <a href="index.html">Home</a>
+      <span>Admin Dashboard</span>
+    </nav>
+  </header>
+
+  <main>
+    <section class="section">
+      <h1>Admin Dashboard</h1>
+      <p>Manage scenarios and monitor learner progress.</p>
+
+      <div class="admin-grid">
+        <section class="admin-panel">
+          <h2>Add New Scenario</h2>
+          <form id="add-scenario-form" class="progress-form">
+            <label>
+              Title
+              <input type="text" id="scenario-title" placeholder="Scenario title" required />
+            </label>
+            <label>
+              Description
+              <textarea id="scenario-description" placeholder="Scenario description" required></textarea>
+            </label>
+            <label>
+              Tool
+              <input type="text" id="scenario-tool" placeholder="Required tool" required />
+            </label>
+            <label>
+              Difficulty
+              <select id="scenario-difficulty" required>
+                <option value="Beginner">Beginner</option>
+                <option value="Intermediate">Intermediate</option>
+                <option value="Advanced">Advanced</option>
+              </select>
+            </label>
+            <button type="submit" class="btn btn-primary">Add Scenario</button>
+            <p id="add-message" class="message"></p>
+          </form>
+        </section>
+
+        <section class="admin-panel">
+          <h2>All Scenarios</h2>
+          <div id="admin-scenario-list" class="scenario-list">
+            <div class="scenario-item">Loading scenarios...</div>
+          </div>
+        </section>
+
+        <section class="admin-panel">
+          <h2>Learner Progress</h2>
+          <div id="progress-list" class="scenario-list">
+            <div class="scenario-item">Loading progress...</div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script src="admin.js"></script>
+</body>
+</html>

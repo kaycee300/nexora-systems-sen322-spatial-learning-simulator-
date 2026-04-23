@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SkillScape | Learner Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <a href="index.html" class="brand">
+      <span class="brand-mark">S</span>
+      <span class="brand-copy">
+        <strong>SkillScape</strong>
+        <span>Vocational learning platform</span>
+      </span>
+    </a>
+    <nav class="site-nav">
+      <a href="index.html">Home</a>
+      <span>Learner Dashboard</span>
+    </nav>
+  </header>
+
+  <main>
+    <section class="section">
+      <h1>Learner Dashboard</h1>
+      <p>Welcome to your personal learning space. Explore scenarios and track your progress.</p>
+
+      <div class="scenario-layout">
+        <aside class="scenario-spotlight">
+          <h3>Available Scenarios</h3>
+          <p>Select a scenario to start learning.</p>
+        </aside>
+        <div id="scenario-list" class="scenario-list">
+          <div class="scenario-item">Loading scenarios...</div>
+        </div>
+      </div>
+
+      <section class="section progress-section">
+        <h2>Track Your Progress</h2>
+        <form id="progress-form" class="progress-form">
+          <label>
+            Your Name
+            <input type="text" id="student-name" placeholder="Enter your name" required />
+          </label>
+          <label>
+            Scenario ID
+            <input type="number" id="scenario-id" placeholder="Enter scenario ID" required min="1" />
+          </label>
+          <label>
+            Status
+            <select id="progress-status" required>
+              <option value="In progress">In progress</option>
+              <option value="Completed">Completed</option>
+              <option value="Needs review">Needs review</option>
+            </select>
+          </label>
+          <button type="submit" class="btn btn-primary">Save Progress</button>
+          <p id="progress-message" class="message"></p>
+        </form>
+      </section>
+    </section>
+  </main>
+
+  <script src="user.js"></script>
+</body>
+</html>
