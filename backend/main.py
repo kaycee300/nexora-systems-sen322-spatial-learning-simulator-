@@ -266,6 +266,11 @@ async def read_scenario(scenario_id: int, db: Session = Depends(get_db)):
     return scenario
 
 
+@app.post("/scenarios", response_model=schemas.Scenario)
+async def create_scenario(scenario: schemas.ScenarioBase, db: Session = Depends(get_db)):
+    return crud.create_scenario(db, scenario)
+
+
 @app.post("/progress", response_model=schemas.Progress)
 async def save_progress(progress: schemas.ProgressCreate, db: Session = Depends(get_db)):
     scenario = crud.get_scenario(db, progress.scenario_id)

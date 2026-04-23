@@ -717,6 +717,19 @@ def get_scenario(db: Session, scenario_id: int):
     return db.query(models.Scenario).filter(models.Scenario.id == scenario_id).first()
 
 
+def create_scenario(db: Session, scenario: schemas.ScenarioBase):
+    db_scenario = models.Scenario(
+        title=scenario.title,
+        description=scenario.description,
+        tool=scenario.tool,
+        difficulty=scenario.difficulty,
+    )
+    db.add(db_scenario)
+    db.commit()
+    db.refresh(db_scenario)
+    return db_scenario
+
+
 def get_progress(db: Session):
     return db.query(models.UserProgress).order_by(models.UserProgress.updated_at.desc()).all()
 
