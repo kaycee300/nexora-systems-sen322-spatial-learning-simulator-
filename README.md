@@ -8,13 +8,25 @@ The project is intentionally split into two parts:
 
 ## Architecture
 
-- `backend/main.py`: FastAPI application with scenario and progress endpoints.
+- `backend/main.py`: FastAPI application with scenario, progress, and admin endpoints.
 - `backend/database.py`: SQLite database setup with SQLAlchemy.
 - `backend/models.py`: ORM models for training scenarios and user progress.
 - `backend/crud.py`: Data access layer and seed data.
-- `frontend/index.html`: Landing page and scenario explorer.
-- `frontend/app.js`: Fetches backend data and initializes the Three.js preview.
+- `frontend/index.html`: Landing page with role selection modal.
+- `frontend/user.html`: Learner dashboard for scenarios and progress tracking.
+- `frontend/admin.html`: Admin dashboard for managing scenarios and viewing progress.
+- `frontend/app.js`: Handles landing page modal and navigation.
+- `frontend/user.js`: Learner page functionality.
+- `frontend/admin.js`: Admin page functionality.
 - `frontend/styles.css`: Design and responsive layout.
+
+## API Endpoints
+
+- `GET /scenarios` — list training scenarios.
+- `GET /scenarios/{id}` — get scenario details.
+- `POST /scenarios` — create new scenario (admin).
+- `POST /progress` — save learner progress.
+- `GET /progress` — list all progress records (admin).
 
 ## Skill Categories
 
