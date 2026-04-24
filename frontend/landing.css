@@ -66,6 +66,7 @@ body {
   font-weight: 700;
   color: var(--text);
   margin-bottom: 0.5rem;
+  animation: slideDown 0.8s ease-out;
 }
 
 .logo-text p {
@@ -92,6 +93,7 @@ body {
   line-height: 1.2;
   margin-bottom: 1.5rem;
   color: var(--text);
+  animation: fadeInUp 1s ease-out 0.2s both;
 }
 
 .hero-content p {
