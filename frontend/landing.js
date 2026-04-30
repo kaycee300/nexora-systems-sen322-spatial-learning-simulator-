@@ -164,12 +164,9 @@ async function handleAuthSubmit(e) {
 
       // Handle redirect
       successBtn.onclick = () => {
-        const role = result.user.role || 'learner';
-        if (role === 'admin') {
-          window.location.href = 'admin.html';
-        } else {
-          window.location.href = 'user.html';
-        }
+        successModal.style.display = 'none';
+        // Stay on landing page - no redirect needed
+        alert('Welcome! You are now signed up.');
       };
     } else {
       const errorMessage = formatAuthError(result);
