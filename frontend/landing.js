@@ -111,8 +111,15 @@ async function handleAuthSubmit(e) {
       body: JSON.stringify(data),
     });
 
+    const responseText = await response.text();
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch {
+      result = responseText;
+    }
+
     if (response.ok) {
-      const result = await response.json();
       // Store auth token and user info
       localStorage.setItem('skillscape-token', result.access_token);
       localStorage.setItem('skillscape-user', JSON.stringify(result.user));
@@ -127,13 +134,33 @@ async function handleAuthSubmit(e) {
 
       modal.style.display = 'none';
     } else {
-      const error = await response.json();
-      alert(error.detail || 'Authentication failed');
+      const errorMessage = formatAuthError(result);
+      alert(errorMessage);
     }
   } catch (error) {
     console.error('Auth error:', error);
     alert('Network error. Please try again. Check the browser console for details.');
   }
+}
+
+function formatAuthError(error) {
+  if (!error) return 'Authentication failed.';
+  if (typeof error === 'string') return error;
+  if (Array.isArray(error)) {
+    return error
+      .map((item) => {
+        if (typeof item === 'string') return item;
+        if (item?.msg) return item.msg;
+        return JSON.stringify(item);
+      })
+      .join(' ');
+  }
+  if (error.detail !== undefined) {
+    return formatAuthError(error.detail);
+  }
+  if (error.message) return error.message;
+  if (error.error) return formatAuthError(error.error);
+  return JSON.stringify(error);
 }
 
 // Check if user is already logged in
