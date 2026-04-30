@@ -101,7 +101,9 @@ async function handleAuthSubmit(e) {
 
   try {
     const endpoint = isSignup ? '/auth/register' : '/auth/login';
-    const response = await fetch(`${BACKEND_URL}${endpoint}`, {
+    const url = `${BACKEND_URL}${endpoint}`;
+    console.log('Auth request', { isSignup, url, data });
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -130,7 +132,7 @@ async function handleAuthSubmit(e) {
     }
   } catch (error) {
     console.error('Auth error:', error);
-    alert('Network error. Please try again.');
+    alert('Network error. Please try again. Check the browser console for details.');
   }
 }
 
