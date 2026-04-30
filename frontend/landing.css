@@ -61,7 +61,6 @@ body {
   width: 30px;
   height: 30px;
 }
-}
 
 .logo-text h1 {
   font-family: 'Space Grotesk', sans-serif;
@@ -279,7 +278,7 @@ body {
 
 .auth-card h1 {
   margin: 0 0 0.5rem;
-  font-size: 2rem;
+  font-size: 1.5rem;
   letter-spacing: -0.03em;
   color: var(--text);
 }
