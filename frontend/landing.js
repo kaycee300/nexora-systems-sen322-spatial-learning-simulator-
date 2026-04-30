@@ -89,14 +89,35 @@ async function handleAuthSubmit(e) {
   const formData = new FormData(e.target);
   const isSignup = e.target.querySelector('h2').textContent === 'Create Account';
 
+  // Validate required fields
+  const email = formData.get('email')?.trim();
+  const password = formData.get('password')?.trim();
+  const name = isSignup ? formData.get('name')?.trim() : null;
+  const role = isSignup ? formData.get('role') : null;
+
+  if (!email || !password || (isSignup && (!name || !role))) {
+    showErrorMessage('Please fill in all required fields.');
+    return;
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showErrorMessage('Please enter a valid email address.');
+    return;
+  }
+
+  if (password.length < 6) {
+    showErrorMessage('Password must be at least 6 characters long.');
+    return;
+  }
+
   const data = {
-    email: formData.get('email'),
-    password: formData.get('password'),
+    email,
+    password,
   };
 
   if (isSignup) {
-    data.name = formData.get('name');
-    data.role = formData.get('role');
+    data.name = name;
+    data.role = role;
   }
 
   try {
