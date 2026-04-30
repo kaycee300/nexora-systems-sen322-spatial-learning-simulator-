@@ -32,24 +32,24 @@ function showAuthForm(type) {
       ${isSignup ? `
         <div class="form-group">
           <label for="name">Full Name</label>
-          <input type="text" id="name" required>
+          <input type="text" id="name" name="name" required>
         </div>
       ` : ''}
 
       <div class="form-group">
         <label for="email">Email</label>
-        <input type="email" id="email" required>
+        <input type="email" id="email" name="email" required>
       </div>
 
       <div class="form-group">
         <label for="password">Password</label>
-        <input type="password" id="password" required>
+        <input type="password" id="password" name="password" required>
       </div>
 
       ${isSignup ? `
         <div class="form-group">
           <label for="role">I am a:</label>
-          <select id="role" required>
+          <select id="role" name="role" required>
             <option value="learner">Learner</option>
             <option value="admin">Administrator</option>
           </select>
