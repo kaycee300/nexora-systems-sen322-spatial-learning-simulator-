@@ -179,6 +179,24 @@ body {
   font-size: 2rem;
 }
 
+.feature-icon svg {
+  width: 2rem;
+  height: 2rem;
+  display: block;
+}
+
+.feature:nth-child(1) .feature-icon {
+  color: #ff7a18;
+}
+
+.feature:nth-child(2) .feature-icon {
+  color: #0ea5e9;
+}
+
+.feature:nth-child(3) .feature-icon {
+  color: #22c55e;
+}
+
 .feature span:last-child {
   font-size: 0.9rem;
   color: var(--text-muted);
@@ -212,6 +230,13 @@ body {
 .placeholder-icon {
   font-size: 4rem;
   margin-bottom: 1rem;
+}
+
+.placeholder-icon svg {
+  width: 4rem;
+  height: 4rem;
+  display: block;
+  color: #ffffff;
 }
 
 .preview-placeholder p {
@@ -418,6 +443,12 @@ body {
   color: white;
   animation: scaleIn 0.5s ease-out;
   box-shadow: 0 10px 30px -10px rgba(16, 185, 129, 0.5);
+}
+
+.success-icon svg {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: block;
 }
 
 .success-content h2 {
