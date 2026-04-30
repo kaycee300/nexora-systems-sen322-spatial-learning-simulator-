@@ -28,8 +28,8 @@
         <p>Experience hands-on training in electrical work, carpentry, baking, AI planning, and more through interactive 3D simulations.</p>
 
         <div class="auth-buttons">
-          <button class="btn btn-primary" id="signup-btn">Sign Up</button>
-          <button class="btn btn-secondary" id="signin-btn">Sign In</button>
+          <a class="btn btn-primary" href="signup.html">Sign Up</a>
+          <a class="btn btn-secondary" href="signin.html">Sign In</a>
         </div>
 
         <div class="features-preview">
@@ -74,31 +74,11 @@
       </div>
     </main>
 
-    <!-- Auth Modal -->
-    <div id="auth-modal" class="modal">
-      <div class="modal-content">
-        <span class="close-btn" id="close-modal">&times;</span>
-        <div id="auth-form-container">
-          <!-- Forms will be dynamically inserted here -->
-        </div>
-      </div>
-    </div>
-
-    <!-- Success Modal -->
-    <div id="success-modal" class="modal" style="display: none;">
-      <div class="modal-content success-content">
-        <div class="success-icon">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" fill="currentColor"/>
-          </svg>
-        </div>
-        <h2 id="success-title">Welcome!</h2>
-        <p id="success-message">Your account has been created successfully.</p>
-        <button id="success-btn" class="btn btn-primary">Continue to Dashboard</button>
-      </div>
+    <div class="landing-footer-note">
+      <p>No signup modal — use the dedicated Sign Up or Sign In page.</p>
     </div>
   </div>
 
-  <script src="landing.js"></script>
+  <!-- No auth script on landing page -->
 </body>
 </html>
