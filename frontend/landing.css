@@ -375,6 +375,92 @@ body {
   50% { box-shadow: 0 20px 40px -10px rgba(99, 102, 241, 0.6); }
 }
 
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
+/* Success Modal */
+.success-content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.success-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  color: white;
+  animation: scaleIn 0.5s ease-out;
+  box-shadow: 0 10px 30px -10px rgba(16, 185, 129, 0.5);
+}
+
+.success-content h2 {
+  font-size: 1.75rem;
+  color: var(--text);
+  margin: 0;
+  animation: slideDown 0.5s ease-out 0.1s both;
+}
+
+.success-content p {
+  font-size: 1rem;
+  color: var(--text-muted);
+  margin: 0;
+  animation: slideDown 0.5s ease-out 0.2s both;
+}
+
+.success-content .btn {
+  min-width: 200px;
+  animation: slideDown 0.5s ease-out 0.3s both;
+}
+
+/* Error Toast */
+.error-toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ef4444;
+  color: white;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px -10px rgba(239, 68, 68, 0.5);
+  z-index: 1000;
+  animation: slideDown 0.3s ease-out;
+  font-weight: 500;
+  max-width: 90%;
+  text-align: center;
+}
+
+.error-toast.fade-out {
+  animation: fadeOut 0.3s ease-in forwards;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .landing-main {

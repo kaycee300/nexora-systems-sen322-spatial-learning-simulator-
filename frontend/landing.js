@@ -124,23 +124,54 @@ async function handleAuthSubmit(e) {
       localStorage.setItem('skillscape-token', result.access_token);
       localStorage.setItem('skillscape-user', JSON.stringify(result.user));
 
-      // Redirect based on role
-      const role = result.user.role || 'learner';
-      if (role === 'admin') {
-        window.location.href = 'admin.html';
+      // Show success modal
+      const successModal = document.getElementById('success-modal');
+      const successTitle = document.getElementById('success-title');
+      const successMessage = document.getElementById('success-message');
+      const successBtn = document.getElementById('success-btn');
+
+      if (isSignup) {
+        successTitle.textContent = 'Welcome to SkillScape!';
+        successMessage.textContent = `Account created for ${result.user.name}. Get ready to start learning.`;
       } else {
-        window.location.href = 'user.html';
+        successTitle.textContent = 'Welcome Back!';
+        successMessage.textContent = `Welcome back, ${result.user.name}.`;
       }
 
       modal.style.display = 'none';
+      successModal.style.display = 'flex';
+
+      // Handle redirect
+      successBtn.onclick = () => {
+        const role = result.user.role || 'learner';
+        if (role === 'admin') {
+          window.location.href = 'admin.html';
+        } else {
+          window.location.href = 'user.html';
+        }
+      };
     } else {
       const errorMessage = formatAuthError(result);
-      alert(errorMessage);
+      showErrorMessage(errorMessage);
     }
   } catch (error) {
     console.error('Auth error:', error);
-    alert('Network error. Please try again. Check the browser console for details.');
+    showErrorMessage('Network error. Please try again. Check the browser console for details.');
   }
+}
+
+function showErrorMessage(message) {
+  // Create error toast
+  const toast = document.createElement('div');
+  toast.className = 'error-toast';
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  // Remove after 5 seconds
+  setTimeout(() => {
+    toast.classList.add('fade-out');
+    setTimeout(() => toast.remove(), 300);
+  }, 5000);
 }
 
 function formatAuthError(error) {
