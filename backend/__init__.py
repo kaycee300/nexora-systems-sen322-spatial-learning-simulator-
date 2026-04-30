@@ -1,1 +1,0 @@
-# SkillScape backend package
