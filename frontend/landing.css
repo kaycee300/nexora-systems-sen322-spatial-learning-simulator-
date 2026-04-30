@@ -258,6 +258,7 @@ body {
   justify-content: center;
   padding: 3rem 1.5rem;
   background: linear-gradient(180deg, rgba(15, 23, 42, 0.02), transparent 55%);
+  animation: pageFade 0.9s ease both;
 }
 
 .auth-card {
@@ -341,6 +342,17 @@ body {
   to {
     transform: translateY(0);
     opacity: 1;
+  }
+}
+
+@keyframes pageFade {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
