@@ -219,11 +219,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
   if (token && user) {
     const userData = JSON.parse(user);
-    // Redirect to appropriate page
-    if (userData.role === 'admin') {
-      window.location.href = 'admin.html';
-    } else {
-      window.location.href = 'user.html';
-    }
+    // Show welcome message instead of redirecting
+    alert(`Welcome back, ${userData.name}! You are already signed in.`);
   }
 });
