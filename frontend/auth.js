@@ -1,4 +1,4 @@
-const BACKEND_URL = 'http://localhost:8001';
+const BACKEND_URL = 'http://localhost:8002';
 const body = document.body;
 const authType = body.dataset.auth;
 const form = document.getElementById('auth-form');
