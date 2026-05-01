@@ -1,4 +1,4 @@
-const BACKEND_URL = 'http://localhost:8002';
+const BACKEND_URL = 'http://127.0.0.1:8002';
 const body = document.body;
 const authType = body.dataset.auth;
 const form = document.getElementById('auth-form');
@@ -69,7 +69,24 @@ form.addEventListener('submit', async (event) => {
     }
 
     localStorage.setItem('skillscape-token', result.access_token);
-    localStorage.setItem('skillscape-user', JSON.stringify({ email, name: fullName || email }));
+
+    // Try to fetch the current user using the returned token and store profile
+    try {
+      const meResp = await fetch(`${BACKEND_URL}/auth/me`, {
+        headers: { Authorization: `Bearer ${result.access_token}` },
+      });
+      if (meResp.ok) {
+        const meJson = await meResp.json();
+        const user = meJson.user || meJson; // router returns { user: {...} }
+        localStorage.setItem('skillscape-user', JSON.stringify({ email: user.email, name: user.full_name }));
+      } else {
+        // fallback to storing minimal info
+        localStorage.setItem('skillscape-user', JSON.stringify({ email, name: fullName || email }));
+      }
+    } catch (err) {
+      // network error while fetching /auth/me — store minimal info
+      localStorage.setItem('skillscape-user', JSON.stringify({ email, name: fullName || email }));
+    }
 
     const successMessage = isSignup
       ? 'Account created successfully. You can now sign in.'
