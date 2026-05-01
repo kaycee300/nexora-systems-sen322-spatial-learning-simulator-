@@ -1,4 +1,4 @@
-const BACKEND_URL = 'http://127.0.0.1:8001';
+const BACKEND_URL = 'http://localhost:8000';
 const body = document.body;
 const authType = body.dataset.auth;
 const form = document.getElementById('auth-form');
@@ -26,10 +26,10 @@ form.addEventListener('submit', async (event) => {
   const email = formData.get('email')?.trim();
   const password = formData.get('password')?.trim();
   const isSignup = authType === 'signup';
-  const name = isSignup ? formData.get('name')?.trim() : null;
-  const role = isSignup ? formData.get('role') : null;
+  const fullName = isSignup ? formData.get('name')?.trim() : null;
+  const role = isSignup ? 'user' : null; // Default role for signup
 
-  if (!email || !password || (isSignup && (!name || !role))) {
+  if (!email || !password || (isSignup && !fullName)) {
     showStatus('Please fill in all required fields.', 'error');
     return;
   }
@@ -46,7 +46,7 @@ form.addEventListener('submit', async (event) => {
 
   const payload = { email, password };
   if (isSignup) {
-    payload.full_name = name;
+    payload.full_name = fullName;
     payload.role = role;
   }
 
@@ -69,7 +69,7 @@ form.addEventListener('submit', async (event) => {
     }
 
     localStorage.setItem('skillscape-token', result.access_token);
-    localStorage.setItem('skillscape-user', JSON.stringify({ email, name: name || email }));
+    localStorage.setItem('skillscape-user', JSON.stringify({ email, name: fullName || email }));
 
     const successMessage = isSignup
       ? 'Account created successfully. You can now sign in.'
