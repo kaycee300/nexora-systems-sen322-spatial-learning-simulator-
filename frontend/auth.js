@@ -124,6 +124,8 @@ form.addEventListener('submit', async (event) => {
   const isSignup = authType === 'signup';
   const fullName = isSignup ? formData.get('name')?.trim() : null;
   const role = isSignup ? 'user' : null; // Default role for signup
+  const confirmPassword = isSignup ? formData.get('confirm_password')?.trim() : null;
+  const acceptedTerms = isSignup ? formData.get('terms') : null;
 
   if (!email || !password || (isSignup && !fullName)) {
     showStatus('Please fill in all required fields.', 'error');
@@ -132,6 +134,16 @@ form.addEventListener('submit', async (event) => {
 
   if (isSignup && !emailVerified) {
     showStatus('Please verify your email before signing up.', 'error');
+    return;
+  }
+
+  if (isSignup && (!confirmPassword || confirmPassword !== password)) {
+    showStatus('Passwords do not match. Please re-enter.', 'error');
+    return;
+  }
+
+  if (isSignup && !acceptedTerms) {
+    showStatus('You must agree to the Terms and Privacy Policy to create an account.', 'error');
     return;
   }
 
