@@ -6,6 +6,7 @@ const statusMessage = document.getElementById('status-message');
 
 // Email verification flag
 let emailVerified = false;
+let pendingSignupPayload = null;
 
 // If the backend redirects back with ?token=..., capture it and store token
 (function handleTokenInUrl() {
@@ -133,8 +134,26 @@ form.addEventListener('submit', async (event) => {
   }
 
   if (isSignup && !emailVerified) {
-    showStatus('Please verify your email before signing up.', 'error');
-    return;
+    // Auto-send verification code on first create-account click
+    try {
+      const sendResp = await fetch(`${BACKEND_URL}/auth/send-code`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email })
+      });
+      const sendJson = await sendResp.json().catch(() => ({}));
+      if (!sendResp.ok) {
+        showStatus(sendJson.detail || sendJson.message || 'Failed to send verification code.', 'error');
+        return;
+      }
+      // store pending payload to complete signup after verification
+      pendingSignupPayload = { email, password, full_name: fullName, role };
+      showStatus('Verification code sent to your email. Enter the code to complete signup.', 'success');
+      if (codeSection) codeSection.style.display = 'flex';
+      return;
+    } catch (err) {
+      console.error('Auto send-code error', err);
+      showStatus('Unable to send verification code. Try again later.', 'error');
+      return;
+    }
   }
 
   if (isSignup && (!confirmPassword || confirmPassword !== password)) {
