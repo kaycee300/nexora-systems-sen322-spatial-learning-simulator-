@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 
 from routers.auth_router import router as auth_router
+from routers.oauth_router import router as oauth_router
 from database import engine
 import models
 
@@ -25,6 +26,7 @@ models.Base.metadata.create_all(bind=engine)
 
 # Include routers
 app.include_router(auth_router)
+app.include_router(oauth_router)
 
 
 @app.get("/health")

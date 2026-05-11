@@ -11,3 +11,13 @@ class User(Base):
     full_name = Column(String, nullable=False)
     role = Column(String, nullable=False, default="user")
     created_at = Column(DateTime, server_default=func.now())
+
+
+class EmailVerification(Base):
+    __tablename__ = "email_verifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, index=True, nullable=False)
+    code_hash = Column(String, nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    used = Column(Integer, default=0)
