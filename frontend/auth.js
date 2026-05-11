@@ -62,6 +62,40 @@ const verifyCodeBtn = document.getElementById('verify-code-btn');
 const codeSection = document.getElementById('code-section');
 const codeInput = document.getElementById('code-input');
 const emailVerifiedDiv = document.getElementById('email-verified');
+const submitBtn = document.querySelector('.auth-submit');
+
+let isSubmitting = false;
+let resendTimer = null;
+const RESEND_COOLDOWN = 30; // seconds
+
+function setLoadingButton(btn, loading, text) {
+  if (!btn) return;
+  if (loading) {
+    btn.classList.add('loading');
+    btn.disabled = true;
+    if (text) btn._origText = btn.textContent, btn.textContent = text;
+  } else {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+    if (btn._origText) { btn.textContent = btn._origText; delete btn._origText; }
+  }
+}
+
+function startResendCooldown(seconds = RESEND_COOLDOWN) {
+  if (!sendCodeBtn) return;
+  let remaining = seconds;
+  sendCodeBtn.disabled = true;
+  const note = document.querySelector('.resend-note') || (function(){ const el = document.createElement('div'); el.className='resend-note'; sendCodeBtn.parentNode.appendChild(el); return el; })();
+  note.textContent = `Resend available in ${remaining}s`;
+  resendTimer = setInterval(()=>{
+    remaining -= 1;
+    if (remaining <= 0) {
+      clearInterval(resendTimer); resendTimer = null; sendCodeBtn.disabled = false; note.textContent = '';
+    } else {
+      note.textContent = `Resend available in ${remaining}s`;
+    }
+  }, 1000);
+}
 
 if (sendCodeBtn) {
   sendCodeBtn.addEventListener('click', async () => {
@@ -72,20 +106,25 @@ if (sendCodeBtn) {
       showStatus('Enter a valid email to receive a verification code.', 'error');
       return;
     }
+    setLoadingButton(sendCodeBtn, true, 'Sending...');
     try {
       const resp = await fetch(`${BACKEND_URL}/auth/send-code`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email })
       });
-      const json = await resp.json();
+      const json = await resp.json().catch(()=>({}));
       if (!resp.ok) {
         showStatus(json.detail || json.message || 'Failed to send code.', 'error');
+        setLoadingButton(sendCodeBtn, false);
         return;
       }
       showStatus('Verification code sent. Check your email.', 'success');
       if (codeSection) codeSection.style.display = 'flex';
+      startResendCooldown();
     } catch (err) {
       console.error('send-code error', err);
       showStatus('Unable to send code. Try again later.', 'error');
+    } finally {
+      setLoadingButton(sendCodeBtn, false);
     }
   });
 }
@@ -98,52 +137,57 @@ if (verifyCodeBtn) {
     const code = codeInput?.value?.trim();
     if (!email || !validateEmail(email)) { showStatus('Enter a valid email.', 'error'); return; }
     if (!code) { showStatus('Enter the verification code you received.', 'error'); return; }
+    setLoadingButton(verifyCodeBtn, true, 'Verifying...');
     try {
       const resp = await fetch(`${BACKEND_URL}/auth/verify-code`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, code })
       });
-      const json = await resp.json();
+      const json = await resp.json().catch(()=>({}));
       if (!resp.ok) { showStatus(json.detail || json.message || 'Verification failed.', 'error'); return; }
       emailVerified = true;
       if (emailVerifiedDiv) emailVerifiedDiv.style.display = 'block';
-        showStatus('Email verified. Completing signup...', 'success');
-        if (codeSection) codeSection.style.display = 'none';
-        // If there is a pending signup payload (user clicked Create Account earlier), finish signup automatically
-        if (pendingSignupPayload) {
-          try {
-            const signupResp = await fetch(`${BACKEND_URL}/auth/signup`, {
-              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(pendingSignupPayload)
-            });
-            const signupJson = await signupResp.json().catch(() => ({}));
-            if (!signupResp.ok) {
-              showStatus(signupJson.detail || signupJson.message || 'Signup failed after verification.', 'error');
-              pendingSignupPayload = null;
-              return;
-            }
-            // store token
-            localStorage.setItem('skillscape-token', signupJson.access_token);
-            // fetch profile
-            try {
-              const meResp = await fetch(`${BACKEND_URL}/auth/me`, { headers: { Authorization: `Bearer ${signupJson.access_token}` } });
-              if (meResp.ok) {
-                const meJson = await meResp.json();
-                const user = meJson.user || meJson;
-                localStorage.setItem('skillscape-user', JSON.stringify({ email: user.email, name: user.full_name }));
-              }
-            } catch (e) { /* ignore */ }
-            showStatus('Account created successfully. You are signed in.', 'success');
-            form.reset();
+      showStatus('Email verified. Completing signup...', 'success');
+      if (codeSection) codeSection.style.display = 'none';
+      // If there is a pending signup payload (user clicked Create Account earlier), finish signup automatically
+      if (pendingSignupPayload) {
+        setLoadingButton(submitBtn, true, 'Creating...');
+        try {
+          const signupResp = await fetch(`${BACKEND_URL}/auth/signup`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(pendingSignupPayload)
+          });
+          const signupJson = await signupResp.json().catch(() => ({}));
+          if (!signupResp.ok) {
+            showStatus(signupJson.detail || signupJson.message || 'Signup failed after verification.', 'error');
             pendingSignupPayload = null;
-          } catch (err) {
-            console.error('Signup after verify failed', err);
-            showStatus('Signup failed after verification. Try signing in.', 'error');
-            pendingSignupPayload = null;
+            setLoadingButton(submitBtn, false);
+            return;
           }
-        }
+          // store token
+          localStorage.setItem('skillscape-token', signupJson.access_token);
+          // fetch profile
+          try {
+            const meResp = await fetch(`${BACKEND_URL}/auth/me`, { headers: { Authorization: `Bearer ${signupJson.access_token}` } });
+            if (meResp.ok) {
+              const meJson = await meResp.json();
+              const user = meJson.user || meJson;
+              localStorage.setItem('skillscape-user', JSON.stringify({ email: user.email, name: user.full_name }));
+            }
+          } catch (e) { /* ignore */ }
+          showStatus('Account created successfully. You are signed in.', 'success');
+          form.reset();
+          pendingSignupPayload = null;
+          // redirect to dashboard
+          setTimeout(()=> window.location.href = 'dashboard.html', 750);
+        } catch (err) {
+          console.error('Signup after verify failed', err);
+          showStatus('Signup failed after verification. Try signing in.', 'error');
+          pendingSignupPayload = null;
+        } finally { setLoadingButton(submitBtn, false); }
+      }
     } catch (err) {
       console.error('verify-code error', err);
       showStatus('Unable to verify code. Try again later.', 'error');
-    }
+    } finally { setLoadingButton(verifyCodeBtn, false); }
   });
 }
 
@@ -218,6 +262,8 @@ form.addEventListener('submit', async (event) => {
   const url = `${BACKEND_URL}${endpoint}`;
 
   try {
+    // set loading state for submit
+    setLoadingButton(submitBtn, true, isSignup ? 'Creating...' : 'Signing in...');
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -253,13 +299,16 @@ form.addEventListener('submit', async (event) => {
     }
 
     const successMessage = isSignup
-      ? 'Account created successfully. You can now sign in.'
-      : 'You are signed in successfully. Welcome back!';
+      ? 'Account created successfully. Redirecting...' 
+      : 'You are signed in successfully. Redirecting...';
 
     showStatus(successMessage, 'success');
     form.reset();
+    // redirect to dashboard after short delay
+    setTimeout(()=> window.location.href = 'dashboard.html', 700);
   } catch (error) {
     console.error('Auth request failed:', error);
     showStatus('Unable to connect to the server. Please try again later.', 'error');
   }
+  finally { setLoadingButton(submitBtn, false); }
 });

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dashboard — SkillScape</title>
+  <link rel="stylesheet" href="auth.css" />
+</head>
+<body>
+  <div class="auth-shell">
+    <main class="auth-card">
+      <header class="auth-header">
+        <div class="brand-mark">SS</div>
+        <div>
+          <h2 class="auth-title">Your Dashboard</h2>
+          <div class="auth-sub">Welcome to SkillScape.</div>
+        </div>
+      </header>
+
+      <div id="profile" style="margin-top:12px">
+        <p class="muted">Loading profile…</p>
+      </div>
+
+      <div style="margin-top:18px;display:flex;gap:8px">
+        <button id="signout" class="btn secondary">Sign out</button>
+        <a href="signup.html" class="muted">Back to signup</a>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    function getUser(){
+      try { return JSON.parse(localStorage.getItem('skillscape-user') || 'null'); } catch(e){return null}
+    }
+    const profile = document.getElementById('profile');
+    const user = getUser();
+    if (user) {
+      profile.innerHTML = `<h3 style="margin:0">${user.name || user.email}</h3><div class="muted">${user.email}</div>`
+    } else {
+      profile.innerHTML = `<div class="muted">No profile in storage. You may be signed out.</div>`
+    }
+    document.getElementById('signout').addEventListener('click', ()=>{
+      localStorage.removeItem('skillscape-token');
+      localStorage.removeItem('skillscape-user');
+      window.location.href = 'signin.html';
+    });
+  </script>
+</body>
+</html>
