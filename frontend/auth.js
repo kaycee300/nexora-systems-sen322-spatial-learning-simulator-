@@ -106,8 +106,40 @@ if (verifyCodeBtn) {
       if (!resp.ok) { showStatus(json.detail || json.message || 'Verification failed.', 'error'); return; }
       emailVerified = true;
       if (emailVerifiedDiv) emailVerifiedDiv.style.display = 'block';
-      showStatus('Email verified. You may complete signup.', 'success');
-      if (codeSection) codeSection.style.display = 'none';
+        showStatus('Email verified. Completing signup...', 'success');
+        if (codeSection) codeSection.style.display = 'none';
+        // If there is a pending signup payload (user clicked Create Account earlier), finish signup automatically
+        if (pendingSignupPayload) {
+          try {
+            const signupResp = await fetch(`${BACKEND_URL}/auth/signup`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(pendingSignupPayload)
+            });
+            const signupJson = await signupResp.json().catch(() => ({}));
+            if (!signupResp.ok) {
+              showStatus(signupJson.detail || signupJson.message || 'Signup failed after verification.', 'error');
+              pendingSignupPayload = null;
+              return;
+            }
+            // store token
+            localStorage.setItem('skillscape-token', signupJson.access_token);
+            // fetch profile
+            try {
+              const meResp = await fetch(`${BACKEND_URL}/auth/me`, { headers: { Authorization: `Bearer ${signupJson.access_token}` } });
+              if (meResp.ok) {
+                const meJson = await meResp.json();
+                const user = meJson.user || meJson;
+                localStorage.setItem('skillscape-user', JSON.stringify({ email: user.email, name: user.full_name }));
+              }
+            } catch (e) { /* ignore */ }
+            showStatus('Account created successfully. You are signed in.', 'success');
+            form.reset();
+            pendingSignupPayload = null;
+          } catch (err) {
+            console.error('Signup after verify failed', err);
+            showStatus('Signup failed after verification. Try signing in.', 'error');
+            pendingSignupPayload = null;
+          }
+        }
     } catch (err) {
       console.error('verify-code error', err);
       showStatus('Unable to verify code. Try again later.', 'error');
