@@ -335,12 +335,14 @@ input:focus {
   background: var(--accent-dark);
 }
 
-body[data-auth="signup"] .auth-submit {
+body[data-auth="signup"] .auth-submit,
+body[data-auth="signin"] .auth-submit {
   background: #6b7280;
   box-shadow: 0 12px 24px rgba(75, 85, 99, 0.2);
 }
 
-body[data-auth="signup"] .auth-submit:hover {
+body[data-auth="signup"] .auth-submit:hover,
+body[data-auth="signin"] .auth-submit:hover {
   background: #4b5563;
 }
 
