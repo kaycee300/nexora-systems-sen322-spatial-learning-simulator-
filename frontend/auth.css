@@ -161,6 +161,14 @@ a:hover {
   margin-bottom: 24px;
 }
 
+.mobile-brand .brand-copy strong {
+  color: var(--ink);
+}
+
+.mobile-brand .brand-copy span {
+  color: var(--muted);
+}
+
 .auth-title {
   margin: 0;
   font-size: 28px;
@@ -478,4 +486,3 @@ button[disabled] {
     align-items: center;
   }
 }
-

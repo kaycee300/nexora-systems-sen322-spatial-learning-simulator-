@@ -1,6 +1,11 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 
+try:
+    from pydantic import ConfigDict
+except ImportError:
+    ConfigDict = None
+
 
 class UserCreate(BaseModel):
     email: EmailStr
@@ -35,5 +40,8 @@ class UserOut(BaseModel):
     role: str
     email_verified: bool = False
 
-    class Config:
-        orm_mode = True
+    if ConfigDict is not None:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+        class Config:
+            orm_mode = True
