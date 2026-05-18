@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 import schemas
 import crud
 import database
+import settings
 import os
 
 # Config

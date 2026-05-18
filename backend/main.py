@@ -1,11 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
+from sqlalchemy import inspect, text
 
 from routers.auth_router import router as auth_router
 from routers.oauth_router import router as oauth_router
 from database import engine
 import models
+import settings
 
 
 app = FastAPI(title="SkillScape API", version="1.0.0")
@@ -24,6 +26,19 @@ app.add_middleware(
 models.Base.metadata.create_all(bind=engine)
 
 
+def ensure_sqlite_columns():
+    if engine.dialect.name != "sqlite":
+        return
+    inspector = inspect(engine)
+    user_columns = {column["name"] for column in inspector.get_columns("users")}
+    if "email_verified" not in user_columns:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 0"))
+
+
+ensure_sqlite_columns()
+
+
 # Include routers
 app.include_router(auth_router)
 app.include_router(oauth_router)
@@ -38,6 +53,5 @@ if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8002))
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
-
 
 

@@ -5,6 +5,7 @@ import os
 import auth
 import database
 import crud
+import settings
 
 router = APIRouter(prefix="/auth", tags=["oauth"])
 

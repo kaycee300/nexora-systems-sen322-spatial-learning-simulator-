@@ -1,78 +1,110 @@
-# SkillScape – Where Practice Meets Simulation
+# Smart Student Expense Tracker
 
-A spatial learning simulator for vocational training in electrical work, carpentry, and mechanical repairs.
-The project is intentionally split into two parts:
+A modern finance app for students with expense tracking, category budgets, receipt upload, AI-style spending insights, weekly/monthly analytics, and a savings goal tracker.
 
-- `backend/`: FastAPI + SQLite API for scenarios and progress tracking.
-- `frontend/`: HTML, CSS, and Three.js landing page with API integration.
+## Run
 
-## Architecture
+### Frontend only
 
-- `backend/main.py`: FastAPI application with scenario, progress, and admin endpoints.
-- `backend/database.py`: SQLite database setup with SQLAlchemy.
-- `backend/models.py`: ORM models for training scenarios and user progress.
-- `backend/crud.py`: Data access layer and seed data.
-- `frontend/index.html`: Landing page with role selection modal.
-- `frontend/user.html`: Learner dashboard for scenarios and progress tracking.
-- `frontend/admin.html`: Admin dashboard for managing scenarios and viewing progress.
-- `frontend/app.js`: Handles landing page modal and navigation.
-- `frontend/user.js`: Learner page functionality.
-- `frontend/admin.js`: Admin page functionality.
-- `frontend/styles.css`: Design and responsive layout.
+Open `index.html` in a browser. Signup and login require the API, but the tracker can keep showing cached data if the API goes offline after login.
 
-## API Endpoints
+### Full stack with FastAPI and PostgreSQL
 
-- `GET /scenarios` — list training scenarios.
-- `GET /scenarios/{id}` — get scenario details.
-- `POST /scenarios` — create new scenario (admin).
-- `POST /progress` — save learner progress.
-- `GET /progress` — list all progress records (admin).
+1. Create a PostgreSQL database and user:
 
-## Skill Categories
-
-SkillScape is designed to support a wide range of practical learning domains, including:
-
-- Electrical work
-- Carpentry
-- Mechanical repair
-- Baking and food preparation
-- AI and technical workflow planning
-
-## Local Setup
-
-### Backend
-
-1. `cd backend`
-2. Create a virtual environment: `python3 -m venv venv`
-3. Activate it: `source venv/bin/activate`
-4. Install requirements: `pip install -r requirements.txt`
-5. Optional for local AI coaching: install Ollama and pull a local model such as `qwen3:1.7b`
-6. Run the backend: `uvicorn main:app --reload --port 8000`
-
-The backend will start at `http://localhost:8000` and seed sample scenarios automatically.
-
-#### Local AI Coach With Ollama
-
-SkillScape can run its lesson coach locally without paid API usage.
-
-1. Install Ollama
-2. Start Ollama: `ollama serve`
-3. Pull a model: `ollama pull qwen3:1.7b`
-4. Optionally set a different model:
-
-```bash
-export OLLAMA_MODEL="qwen3:1.7b"
+```sql
+CREATE USER student_expense WITH PASSWORD 'student_expense';
+CREATE DATABASE student_expense OWNER student_expense;
 ```
 
-By default the backend calls `http://localhost:11434/api/chat`. If Ollama is not running, SkillScape falls back to built-in coaching hints.
-
-### Frontend
-
-1. `cd frontend`
-2. Open `index.html` in a browser, or serve it locally with a static server.
-
-For a simple local server:
+2. Create a Python virtual environment and install dependencies:
 
 ```bash
-cd frontend
-python3 -m http.server 3000
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r backend/requirements.txt
+```
+
+3. Configure the database and SMTP settings:
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Update `backend/.env` with your PostgreSQL details, a long random `SECRET_KEY`, and the SMTP account that should send verification codes.
+
+For Gmail, enable 2-step verification and create an app password, then use:
+
+```env
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=youraddress@gmail.com
+SMTP_PASSWORD=your-16-character-app-password
+SMTP_FROM_EMAIL=youraddress@gmail.com
+SMTP_USE_TLS=true
+SMTP_USE_SSL=false
+SMTP_TIMEOUT=10
+```
+
+For most providers, port `587` uses `SMTP_USE_TLS=true`. Use port `465` with `SMTP_USE_SSL=true` and `SMTP_USE_TLS=false` only when your provider requires implicit SSL.
+
+4. Start the API and frontend:
+
+```bash
+uvicorn backend.main:app --reload
+```
+
+Then open `http://localhost:8000`.
+
+The backend creates the database tables on startup. Each new user gets private default categories and a savings goal during signup.
+
+If you created the database with an earlier version, recreate the database or add migrations before starting this version because the schema now includes `users.email_verified` and `email_verification_codes`.
+
+## Features
+
+- Expense tracking with PostgreSQL persistence through FastAPI
+- Signup/login with bearer-token authentication
+- Email verification after signup
+- Private per-user expenses, budgets, and savings goal data
+- Bcrypt password hashing
+- JWT access tokens with configurable expiry
+- Basic login lockout after repeated failed attempts
+- Local browser cache when the API goes offline after login
+- Budget categories and over-budget status
+- Weekly/monthly analytics by category
+- Rule-based AI suggestions such as food spend percentage and daily pace
+- Receipt image upload with browser OCR through Tesseract.js and a fallback scanner
+- Savings goal tracker with progress ring
+
+## API
+
+- `GET /health`
+- `POST /api/auth/signup`
+- `POST /api/auth/login`
+- `POST /api/auth/verify-email`
+- `POST /api/auth/resend-verification`
+- `GET /api/state`
+- `PATCH /api/profile`
+- `GET /api/expenses`
+- `POST /api/expenses`
+- `PUT /api/goal`
+
+## Auth Security
+
+- Passwords are stored as bcrypt hashes, never plaintext.
+- Existing legacy PBKDF2 hashes are still accepted and are upgraded to bcrypt after a successful login.
+- Access tokens are signed with `SECRET_KEY` and expire after `ACCESS_TOKEN_MINUTES`.
+- New accounts must verify email before accessing private finance data.
+- Verification codes are stored as HMAC hashes, expire after `EMAIL_VERIFICATION_MINUTES`, and are attempt-limited.
+- Login attempts are rate-limited in memory with `LOGIN_MAX_ATTEMPTS` and `LOGIN_LOCKOUT_MINUTES`.
+
+For production, set a long random `SECRET_KEY`, use HTTPS, and move rate limiting to a shared store such as Redis.
+
+If SMTP settings are empty, verification codes are printed to the backend terminal for local development. Configure `SMTP_HOST`, `SMTP_USERNAME`, `SMTP_PASSWORD`, and `SMTP_FROM_EMAIL` in `backend/.env` to send real emails. If the SMTP provider rejects a message, signup and resend return `503` so the app does not report a false success.
+
+## Extra Ideas Included
+
+- Monthly allowance control
+- Daily spending pace insight
+- Budget surplus suggestion
+- Receipt text and filename extraction for merchant, category, and amount

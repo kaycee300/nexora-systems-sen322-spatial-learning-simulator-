@@ -1,8 +1,11 @@
 from collections import defaultdict, deque
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Request
+from email.message import EmailMessage
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from typing import Any
 import os
+import secrets
+import smtplib
 import threading
 import time
 
@@ -11,14 +14,18 @@ import crud
 import auth
 import database
 import crud_email
+import settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 SMTP_HOST = os.environ.get("SMTP_HOST")
 SMTP_PORT = int(os.environ.get("SMTP_PORT", 587))
-SMTP_USER = os.environ.get("SMTP_USER")
-SMTP_PASS = os.environ.get("SMTP_PASS")
-FROM_EMAIL = os.environ.get("FROM_EMAIL", "no-reply@skillscape.local")
+SMTP_USER = os.environ.get("SMTP_USER") or os.environ.get("SMTP_USERNAME")
+SMTP_PASS = os.environ.get("SMTP_PASS") or os.environ.get("SMTP_PASSWORD")
+FROM_EMAIL = os.environ.get("FROM_EMAIL") or os.environ.get("SMTP_FROM_EMAIL") or "no-reply@skillscape.local"
+SMTP_USE_TLS = os.environ.get("SMTP_USE_TLS", "true").lower() in {"1", "true", "yes"}
+SMTP_USE_SSL = os.environ.get("SMTP_USE_SSL", "").lower() in {"1", "true", "yes"}
+SMTP_TIMEOUT = float(os.environ.get("SMTP_TIMEOUT", 10))
 TRUST_PROXY_HEADERS = os.environ.get("TRUST_PROXY_HEADERS", "").lower() in {"1", "true", "yes"}
 
 
@@ -66,25 +73,26 @@ def rate_limit(request: Request, action: str, limit: int, window_seconds: int, e
         rate_limiter.check(f"{action}:email:{email.lower()}", limit, window_seconds)
 
 
-def send_email_simple(to_email: str, subject: str, body: str):
-    import smtplib
-    from email.message import EmailMessage
+def smtp_is_configured() -> bool:
+    return bool(SMTP_HOST and FROM_EMAIL)
 
-    if not SMTP_HOST:
-        print("SMTP not configured; skipping email send")
-        return False
+
+def send_email_simple(to_email: str, subject: str, body: str) -> None:
+    if not smtp_is_configured():
+        raise RuntimeError("SMTP_HOST and FROM_EMAIL must be configured before email can be sent.")
     msg = EmailMessage()
     msg["From"] = FROM_EMAIL
     msg["To"] = to_email
     msg["Subject"] = subject
     msg.set_content(body)
 
-    with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as s:
-        s.starttls()
+    smtp_class = smtplib.SMTP_SSL if SMTP_USE_SSL else smtplib.SMTP
+    with smtp_class(SMTP_HOST, SMTP_PORT, timeout=SMTP_TIMEOUT) as s:
+        if SMTP_USE_TLS and not SMTP_USE_SSL:
+            s.starttls()
         if SMTP_USER and SMTP_PASS:
             s.login(SMTP_USER, SMTP_PASS)
         s.send_message(msg)
-    return True
 
 
 @router.post("/signup", response_model=schemas.Token)
@@ -94,6 +102,8 @@ def signup(user: schemas.UserCreate, request: Request, db: Session = Depends(dat
     existing = crud.get_user_by_email(db, user.email)
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
+    if not crud_email.has_recent_verified_code(db, user.email):
+        raise HTTPException(status_code=400, detail="Please verify your email before creating an account")
     created = crud.create_user(db, user)
     access_token = auth.create_access_token({"sub": str(created.id), "email": created.email, "role": created.role})
     return {"access_token": access_token, "token_type": "bearer"}
@@ -116,32 +126,39 @@ def me(current_user: Any = Depends(auth.get_current_user)) -> Any:
 
 @router.post("/send-code")
 def send_verification_code(
-    payload: dict,
-    background_tasks: BackgroundTasks,
+    payload: schemas.EmailRequest,
     request: Request,
     db: Session = Depends(database.get_db),
 ):
-    # payload: { email }
-    email = payload.get("email")
-    if not email:
-        raise HTTPException(status_code=400, detail="Email required")
+    email = payload.email.lower()
     rate_limit(request, "send-code", limit=3, window_seconds=15 * 60, email=email)
-    # generate 6-digit code
-    import random
-    code = f"{random.randint(0,999999):06d}"
+    if crud.get_user_by_email(db, email):
+        raise HTTPException(status_code=400, detail="Email already registered. Sign in instead.")
+    if not smtp_is_configured():
+        raise HTTPException(
+            status_code=503,
+            detail="Email delivery is not configured. Set SMTP_HOST and FROM_EMAIL on the server.",
+        )
+    code = f"{secrets.randbelow(1000000):06d}"
+    body = (
+        f"Your SkillScape verification code is: {code}\n\n"
+        "It expires in 10 minutes. If you did not request this code, you can ignore this email."
+    )
     crud_email.create_verification(db, email, code)
-    # send via background task
-    body = f"Your SkillScape verification code is: {code}\nIt expires in 10 minutes."
-    background_tasks.add_task(send_email_simple, email, "SkillScape verification code", body)
+    try:
+        send_email_simple(email, "SkillScape verification code", body)
+    except (OSError, smtplib.SMTPException, RuntimeError) as exc:
+        print(f"SMTP send failed: {exc}")
+        raise HTTPException(status_code=503, detail="Unable to send verification email. Try again later.")
     return {"sent": True}
 
 
 @router.post("/verify-code")
-def verify_code(payload: dict, request: Request, db: Session = Depends(database.get_db)):
-    email = payload.get("email")
-    code = payload.get("code")
-    if not email or not code:
-        raise HTTPException(status_code=400, detail="Email and code required")
+def verify_code(payload: schemas.EmailCodeVerify, request: Request, db: Session = Depends(database.get_db)):
+    email = payload.email.lower()
+    code = payload.code.strip()
+    if not code:
+        raise HTTPException(status_code=400, detail="Code required")
     rate_limit(request, "verify-code", limit=10, window_seconds=15 * 60, email=email)
     ok = crud_email.verify_code(db, email, code)
     if not ok:

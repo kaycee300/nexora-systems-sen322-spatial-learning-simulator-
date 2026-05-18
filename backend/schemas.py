@@ -14,6 +14,15 @@ class UserLogin(BaseModel):
     password: str
 
 
+class EmailRequest(BaseModel):
+    email: EmailStr
+
+
+class EmailCodeVerify(BaseModel):
+    email: EmailStr
+    code: str
+
+
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -24,6 +33,7 @@ class UserOut(BaseModel):
     email: EmailStr
     full_name: str
     role: str
+    email_verified: bool = False
 
     class Config:
         orm_mode = True

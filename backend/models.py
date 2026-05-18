@@ -10,6 +10,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     full_name = Column(String, nullable=False)
     role = Column(String, nullable=False, default="user")
+    email_verified = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime, server_default=func.now())
 
 
