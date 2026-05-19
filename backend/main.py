@@ -4,11 +4,11 @@ from starlette.middleware.sessions import SessionMiddleware
 import os
 from sqlalchemy import inspect, text
 
-from routers.auth_router import router as auth_router
-from routers.oauth_router import router as oauth_router
-from database import engine
-import models
-import settings
+from .routers.auth_router import router as auth_router
+from .routers.oauth_router import router as oauth_router
+from .database import engine
+from . import models
+from . import settings
 
 
 app = FastAPI(title="SkillScape API", version="1.0.0")
@@ -67,4 +67,3 @@ if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8002))
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
-
