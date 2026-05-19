@@ -1,4 +1,4 @@
-const BACKEND_URL = 'http://127.0.0.1:8002';
+const BACKEND_URL = 'http://127.0.0.1:8000';
 
 const body = document.body;
 const authType = body.dataset.auth;
@@ -183,6 +183,15 @@ async function fetchProfile(token, fallback = {}) {
   }
 }
 
+async function checkBackend() {
+  try {
+    const response = await fetch(`${BACKEND_URL}/health`);
+    if (!response.ok) throw new Error('Health check failed');
+  } catch {
+    throw new Error('Backend is not running. Start FastAPI on http://127.0.0.1:8002 and try again.');
+  }
+}
+
 async function requestVerificationCode(email) {
   const response = await fetch(`${BACKEND_URL}/auth/send-code`, {
     method: 'POST',
@@ -228,16 +237,32 @@ const googleSignupBtn = document.getElementById('google-signup');
 const googleSigninBtn = document.getElementById('google-signin');
 
 if (googleSignupBtn) {
-  googleSignupBtn.addEventListener('click', (event) => {
+  googleSignupBtn.addEventListener('click', async (event) => {
     event.preventDefault();
-    window.location.href = `${BACKEND_URL}/auth/google/login`;
+    hideStatus();
+    setLoadingButton(googleSignupBtn, true, 'Connecting...');
+    try {
+      await checkBackend();
+      window.location.href = `${BACKEND_URL}/auth/google/login`;
+    } catch (error) {
+      showStatus(error.message, 'error');
+      setLoadingButton(googleSignupBtn, false);
+    }
   });
 }
 
 if (googleSigninBtn) {
-  googleSigninBtn.addEventListener('click', (event) => {
+  googleSigninBtn.addEventListener('click', async (event) => {
     event.preventDefault();
-    window.location.href = `${BACKEND_URL}/auth/google/login`;
+    hideStatus();
+    setLoadingButton(googleSigninBtn, true, 'Connecting...');
+    try {
+      await checkBackend();
+      window.location.href = `${BACKEND_URL}/auth/google/login`;
+    } catch (error) {
+      showStatus(error.message, 'error');
+      setLoadingButton(googleSigninBtn, false);
+    }
   });
 }
 
@@ -383,4 +408,3 @@ form.addEventListener('submit', async (event) => {
     setLoadingButton(submitBtn, false);
   }
 });
-

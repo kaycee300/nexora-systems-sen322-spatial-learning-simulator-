@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Request
+from fastapi.responses import HTMLResponse
 from starlette.responses import RedirectResponse
 from authlib.integrations.starlette_client import OAuth
 import os
@@ -28,7 +29,17 @@ if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
 @router.get("/google/login")
 async def google_login(request: Request):
     if not (GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET):
-        return {"error": "Google OAuth not configured on server"}
+        return HTMLResponse(
+            """
+            <!doctype html>
+            <title>Google login not configured</title>
+            <body style="font-family:system-ui;margin:40px;line-height:1.5">
+              <h1>Google login is not configured</h1>
+              <p>Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to .env or backend/.env, then restart the API.</p>
+            </body>
+            """,
+            status_code=503,
+        )
     redirect_uri = request.url_for("google_callback")
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
@@ -36,7 +47,7 @@ async def google_login(request: Request):
 @router.get("/google/callback", name="google_callback")
 async def google_callback(request: Request):
     if not (GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET):
-        return {"error": "Google OAuth not configured on server"}
+        return HTMLResponse("Google OAuth is not configured on the server.", status_code=503)
     token = await oauth.google.authorize_access_token(request)
     userinfo = await oauth.google.parse_id_token(request, token)
     # userinfo contains 'sub', 'email', 'name', 'picture', etc.
