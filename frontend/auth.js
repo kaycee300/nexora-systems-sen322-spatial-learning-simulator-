@@ -1,4 +1,4 @@
-const BACKEND_URL = 'http://127.0.0.1:8000';
+const BACKEND_URL = 'http://127.0.0.1:8084';
 
 const body = document.body;
 const authType = body.dataset.auth;
@@ -22,8 +22,6 @@ const RESEND_COOLDOWN = 30;
 
 (function handleTokenInUrl() {
   try {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('token') || params.get('access_token');
     if (!token) return;
 
     localStorage.setItem('skillscape-token', token);
@@ -236,7 +234,34 @@ async function completeSignup(payload) {
 const googleSignupBtn = document.getElementById('google-signup');
 const googleSigninBtn = document.getElementById('google-signin');
 
-passwordInputs.forEach(setupPasswordToggle);
+// Password visibility toggle functionality
+function setupPasswordToggle(toggleBtn) {
+  const input = toggleBtn.closest('.password-input-wrapper').querySelector('input');
+  const eyeOpen = toggleBtn.querySelector('.eye-open');
+  const eyeClosed = toggleBtn.querySelector('.eye-closed');
+
+  toggleBtn.addEventListener('click', () => {
+    const isVisible = toggleBtn.dataset.visible === 'true';
+    const newState = !isVisible;
+
+    // Toggle input type
+    input.type = newState ? 'text' : 'password';
+    toggleBtn.dataset.visible = newState.toString();
+
+    // Toggle eye icons
+    if (eyeOpen && eyeClosed) {
+      eyeOpen.style.display = newState ? 'none' : 'block';
+      eyeClosed.style.display = newState ? 'block' : 'none';
+    }
+
+    // Update aria-label
+    toggleBtn.setAttribute('aria-label', newState ? 'Hide password' : 'Show password');
+  });
+}
+
+// Initialize password toggles for all password fields
+const passwordToggles = document.querySelectorAll('.password-toggle');
+passwordToggles.forEach(setupPasswordToggle);
 
 if (googleSignupBtn) {
   googleSignupBtn.addEventListener('click', async (event) => {
