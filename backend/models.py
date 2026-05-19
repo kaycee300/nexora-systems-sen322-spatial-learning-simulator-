@@ -22,3 +22,14 @@ class EmailVerification(Base):
     code_hash = Column(String, nullable=False)
     expires_at = Column(DateTime, nullable=False)
     used = Column(Integer, default=0)
+
+
+class PasswordReset(Base):
+    __tablename__ = "password_resets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False)
+    token_hash = Column(String, nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    used = Column(Integer, default=0)
+    created_at = Column(DateTime, server_default=func.now())
