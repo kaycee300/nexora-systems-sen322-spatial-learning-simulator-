@@ -4,10 +4,10 @@ from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-import schemas
-import crud
-import database
-import settings
+from . import schemas
+from . import crud
+from . import database
+from . import settings
 import os
 
 # Config
