@@ -2,17 +2,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 import os
-import sys
 from sqlalchemy import inspect, text
 
-# Add parent directory to path for imports when running from backend/
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from routers.auth_router import router as auth_router
-from routers.oauth_router import router as oauth_router
-from database import engine
-import models
-import settings
+from .routers.auth_router import router as auth_router
+from .routers.oauth_router import router as oauth_router
+from .database import engine
+from . import models
+from . import settings
 
 
 app = FastAPI(title="SkillScape API", version="1.0.0")
@@ -37,7 +33,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-)
+ )
 
 
 # Ensure DB tables exist
