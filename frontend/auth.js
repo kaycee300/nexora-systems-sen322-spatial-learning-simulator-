@@ -236,6 +236,8 @@ async function completeSignup(payload) {
 const googleSignupBtn = document.getElementById('google-signup');
 const googleSigninBtn = document.getElementById('google-signin');
 
+passwordInputs.forEach(setupPasswordToggle);
+
 if (googleSignupBtn) {
   googleSignupBtn.addEventListener('click', async (event) => {
     event.preventDefault();
