@@ -1,7 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-import settings
 import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

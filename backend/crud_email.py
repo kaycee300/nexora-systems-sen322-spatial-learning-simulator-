@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models import EmailVerification
+from .models import EmailVerification
 import datetime
 import hashlib
 
