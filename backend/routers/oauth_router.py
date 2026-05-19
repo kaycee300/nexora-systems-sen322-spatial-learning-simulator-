@@ -3,10 +3,10 @@ from fastapi.responses import HTMLResponse
 from starlette.responses import RedirectResponse
 from authlib.integrations.starlette_client import OAuth
 import os
-import auth
-import database
-import crud
-import settings
+from .. import auth
+from .. import database
+from .. import crud
+from .. import settings
 
 router = APIRouter(prefix="/auth", tags=["oauth"])
 

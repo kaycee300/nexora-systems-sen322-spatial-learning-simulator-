@@ -9,12 +9,12 @@ import smtplib
 import threading
 import time
 
-import schemas
-import crud
-import auth
-import database
-import crud_email
-import settings
+from .. import schemas
+from .. import crud
+from .. import auth
+from .. import database
+from .. import crud_email
+from .. import settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
