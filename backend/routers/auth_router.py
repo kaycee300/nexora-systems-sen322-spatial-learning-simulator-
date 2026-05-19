@@ -1,3 +1,4 @@
+s
 from collections import defaultdict, deque
 from email.message import EmailMessage
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -14,7 +15,9 @@ from .. import crud
 from .. import auth
 from .. import database
 from .. import crud_email
+from .. import crud_password_reset
 from .. import settings
+import hashlib
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -164,3 +167,97 @@ def verify_code(payload: schemas.EmailCodeVerify, request: Request, db: Session 
     if not ok:
         raise HTTPException(status_code=400, detail="Invalid or expired code")
     return {"verified": True}
+
+
+@router.post("/forgot-password")
+def forgot_password(
+    payload: schemas.PasswordResetRequest,
+    request: Request,
+    db: Session = Depends(database.get_db),
+):
+    """Request a password reset link via email."""
+    email = payload.email.lower()
+    rate_limit(request, "forgot-password", limit=3, window_seconds=15 * 60, email=email)
+    
+    user = crud.get_user_by_email(db, email)
+    if not user:
+        # Don't reveal if email exists - always return success
+        return {"sent": True}
+    
+    if not smtp_is_configured():
+        raise HTTPException(
+            status_code=503,
+            detail="Email delivery is not configured. Set SMTP_HOST and FROM_EMAIL on the server.",
+        )
+    
+    # Generate a secure random token
+    token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    
+    # Create reset token in database
+    crud_password_reset.create_reset_token(db, user.id, token_hash)
+    
+    # Get frontend URL from environment or use default
+    frontend_url = os.environ.get("FRONTEND_URL", "http://127.0.0.1:3000")
+    reset_url = f"{frontend_url}/reset-password.html?token={token}"
+    
+    # Send email
+    body = (
+        f"Hello {user.full_name},\n\n"
+        f"You requested to reset your password. Click the link below to set a new password:\n\n"
+        f"{reset_url}\n\n"
+        f"This link expires in 1 hour. If you did not request this, you can safely ignore this email.\n\n"
+        f"Best regards,\n"
+        f"SkillScape Team"
+    )
+    
+    try:
+        send_email_simple(email, "SkillScape Password Reset", body)
+    except (OSError, smtplib.SMTPException, RuntimeError) as exc:
+        print(f"SMTP send failed: {exc}")
+        raise HTTPException(status_code=503, detail="Unable to send password reset email. Try again later.")
+    
+    return {"sent": True}
+
+
+@router.post("/reset-password")
+def reset_password(
+    payload: schemas.PasswordResetConfirm,
+    request: Request,
+    db: Session = Depends(database.get_db),
+):
+    """Reset password using a valid token."""
+    token = payload.token.strip()
+    new_password = payload.new_password
+    
+    if not token:
+        raise HTTPException(status_code=400, detail="Token is required")
+    
+    if not new_password or len(new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters long")
+    
+    # Hash the token to look up in database
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    
+    # Find valid reset token
+    reset_record = crud_password_reset.get_reset_token(db, token_hash)
+    if not reset_record:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+    
+    # Get the user
+    user = crud.get_user(db, reset_record.user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Update password
+    from . import crud as user_crud
+    hashed_password = user_crud.pwd_context.hash(new_password)
+    user.hashed_password = hashed_password
+    db.add(user)
+    
+    # Mark token as used
+    crud_password_reset.use_reset_token(db, reset_record.id)
+    
+    db.commit()
+    
+    return {"success": True, "message": "Password reset successfully"}
