@@ -186,7 +186,7 @@ async function checkBackend() {
     const response = await fetch(`${BACKEND_URL}/health`);
     if (!response.ok) throw new Error('Health check failed');
   } catch {
-    throw new Error('Backend is not running. Start FastAPI on http://127.0.0.1:8002 and try again.');
+    throw new Error(`Backend is not running. Start FastAPI on ${BACKEND_URL} and try again.`);
   }
 }
 
