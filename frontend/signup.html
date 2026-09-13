@@ -1,4 +1,4 @@
-d<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -24,9 +24,9 @@ d<!DOCTYPE html>
         </div>
 
         <div class="trust-strip">
-          <span>Verified email</span>
-          <span>Progress saved</span>
           <span>Secure access</span>
+          <span>Progress saved</span>
+          <span>Self-paced learning</span>
         </div>
       </aside>
 
@@ -41,7 +41,7 @@ d<!DOCTYPE html>
 
         <header>
           <h2 class="auth-title">Create your account</h2>
-          <p class="auth-sub">Verify your email, choose a password, and start tracking your learning progress.</p>
+          <p class="auth-sub">Choose your details and start tracking your learning progress.</p>
         </header>
 
         <div id="status-message" class="status-message" role="status" aria-live="polite"></div>
@@ -52,19 +52,9 @@ d<!DOCTYPE html>
             <input type="text" id="name" name="name" placeholder="Jane Doe" autocomplete="name" required />
           </div>
 
-          <div class="form-group email-verification-group">
+          <div class="form-row">
             <label for="email">Email address</label>
-            <div class="email-inline">
-              <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" required />
-              <button type="button" class="btn secondary" id="send-code-btn">Send code</button>
-            </div>
-            <div id="code-section" class="code-section">
-              <div class="code-inline">
-                <input type="text" id="code-input" name="code" placeholder="6-digit code" inputmode="numeric" autocomplete="one-time-code" />
-                <button type="button" class="btn secondary" id="verify-code-btn">Verify</button>
-              </div>
-            </div>
-            <div id="email-verified" class="verification-row">Email verified</div>
+            <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" required />
           </div>
 
           <div class="form-row split">

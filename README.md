@@ -44,14 +44,13 @@ skillscape/
 ├── backend/
 │   ├── main.py              # FastAPI app — registers all routers
 │   ├── auth.py              # JWT utilities + get_current_user
-│   ├── crud*.py             # User / email / password database ops
+│   ├── crud.py              # User / project / enrollment database ops
 │   ├── database.py          # SQLite engine + session
-│   ├── models.py            # User, EmailVerification, PasswordReset, Project, Enrollment
+│   ├── models.py            # User, Project, Enrollment
 │   ├── schemas.py           # Pydantic schemas (users + projects + enrollments)
 │   ├── seed_projects.py     # Seeds the 16-course catalog
 │   └── routers/
 │       ├── auth_router.py   # /auth/* endpoints + sliding-window rate limiter
-│       ├── oauth_router.py  # Google OAuth
 │       └── projects.py      # /projects/* CRUD + enroll
 ├── frontend/
 │   ├── landing.html           # Marketing page + 3D hero
@@ -59,7 +58,7 @@ skillscape/
 │   ├── dashboard.html         # App dashboard (3D skill tree, stats, progress)
 │   ├── catalog.html           # Course catalog (search + filters)
 │   ├── simulation.html/.js    # Interactive 3D Circuit Builder
-│   ├── signup / signin / forgot-password / reset-password
+│   ├── signup / signin
 │   ├── app.css                # Design system + app components
 │   ├── app.js                 # Dashboards: auth guard, 3D tree, tilt cards, sidebar
 │   ├── auth.css / auth.js     # Auth pages
@@ -70,18 +69,13 @@ skillscape/
 
 ## 🔌 API Endpoints
 
-### Auth
+### Auth (JWT)
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `GET` | `/health` | Health check |
-| `POST` | `/auth/signup` | Create account (after email verification) |
+| `POST` | `/auth/signup` | Create account → JWT |
 | `POST` | `/auth/signin` | Login → JWT |
-| `GET` | `/auth/me` | Current user profile |
-| `POST` | `/auth/send-code` | Send 6-digit verification code |
-| `POST` | `/auth/verify-code` | Verify code |
-| `POST` | `/auth/forgot-password` | Email password-reset link |
-| `POST` | `/auth/reset-password` | Set new password with token |
-| `GET` | `/auth/google/*` | Google OAuth login/callback |
+| `GET` | `/auth/me` | Current user profile (Bearer token) |
 
 ### Projects (course catalog)
 | Method | Endpoint | Description |
@@ -116,4 +110,4 @@ The **Circuit Builder** (`frontend/simulation.html`) is a fully interactive Thre
 
 ## 🔒 Security
 
-PBKDF2-SHA256 password hashing · 7-day JWTs · mandatory email verification · sliding-window rate limiting · CORS allow-list · SMTP TLS for email
+PBKDF2-SHA256 password hashing · 7-day JWTs · sliding-window rate limiting · CORS allow-list

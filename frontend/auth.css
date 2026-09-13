@@ -321,33 +321,6 @@ input:focus {
   box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.12);
 }
 
-.email-inline,
-.code-inline {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px;
-}
-
-.code-section {
-  display: none;
-  margin-top: 10px;
-}
-
-.verification-row {
-  display: none;
-  margin-top: 8px;
-  color: var(--success);
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.resend-note {
-  min-height: 18px;
-  margin-top: 8px;
-  color: var(--muted);
-  font-size: 12px;
-}
-
 .btn {
   min-height: 46px;
   display: inline-flex;
@@ -521,8 +494,6 @@ button[disabled] {
   }
 
   .form-row.split,
-  .email-inline,
-  .code-inline,
   .form-meta {
     grid-template-columns: 1fr;
     flex-direction: column;

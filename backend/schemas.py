@@ -20,15 +20,6 @@ class UserLogin(BaseModel):
     password: str
 
 
-class EmailRequest(BaseModel):
-    email: EmailStr
-
-
-class EmailCodeVerify(BaseModel):
-    email: EmailStr
-    code: str
-
-
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -46,15 +37,6 @@ class UserOut(BaseModel):
     else:
         class Config:
             orm_mode = True
-
-
-class PasswordResetRequest(BaseModel):
-    email: EmailStr
-
-
-class PasswordResetConfirm(BaseModel):
-    token: str
-    new_password: str
 
 
 class ProjectCreate(BaseModel):
