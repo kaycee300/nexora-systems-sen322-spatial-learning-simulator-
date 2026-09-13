@@ -1,49 +1,317 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard — SkillScape</title>
-  <link rel="stylesheet" href="auth.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="app.css" />
+  <style>
+    /* Dashboard-specific layout helpers */
+    .dash-grid { display: grid; grid-template-columns: 1fr 340px; gap: 24px; }
+    .learning-scene { height: 320px; }
+    @media (max-width: 1100px) { .dash-grid { grid-template-columns: 1fr; } }
+  </style>
 </head>
 <body>
-  <div class="auth-shell">
-    <main class="auth-card">
-      <header class="auth-header">
+  <div class="app-shell">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
         <div class="brand-mark">SS</div>
-        <div>
-          <h2 class="auth-title">Your Dashboard</h2>
-          <div class="auth-sub">Welplecome to SkillScape.</div>
+        <div class="brand-copy">
+          <strong>SkillScape</strong>
+          <span>Where practice meets simulation</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section">Learn</div>
+        <a class="nav-link active" href="dashboard.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+          Overview
+        </a>
+        <a class="nav-link" href="catalog.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          Courses
+        </a>
+        <a class="nav-link" href="dashboard.html#skilltree">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/><path d="M5 19h14"/></svg>
+          Skill Path
+        </a>
+
+        <div class="nav-section">Practice</div>
+        <a class="nav-link" href="catalog.html#simulations">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          Simulations
+        </a>
+        <a class="nav-link" href="dashboard.html#assessment">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Assessments
+        </a>
+
+        <div class="nav-section">Account</div>
+        <a class="nav-link" href="dashboard.html#achievements">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.48 12.52 17 22l-5-3-5 3 1.52-9.48"/></svg>
+          Achievements
+        </a>
+        <a class="nav-link" href="dashboard.html#settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="avatar" id="userAvatar">?</div>
+          <div class="user-meta">
+            <strong id="userName">Loading…</strong>
+            <span id="userEmail">—</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="main-area">
+      <header class="topbar">
+        <div style="display:flex;align-items:center;gap:12px">
+          <button class="icon-btn menu-toggle" id="menuToggle" aria-label="Toggle menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <span class="topbar-title">Overview</span>
+        </div>
+        <div class="topbar-actions">
+          <button class="icon-btn" id="notifBtn" aria-label="Notifications">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </button>
+          <button class="icon-btn" id="signout" aria-label="Sign out">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </button>
         </div>
       </header>
 
-      <div id="profile" style="margin-top:12px">
-        <p class="muted">Loading profile…</p>
-      </div>
+      <main class="content">
+        <!-- Welcome banner -->
+        <div class="catalog-hero" style="padding:32px 36px;margin-bottom:24px">
+          <h1 id="welcomeMsg">Welcome back</h1>
+          <p>Your practice streak is alive. Pick up where you left off and keep building real-world skills.</p>
+        </div>
 
-      <div style="margin-top:18px;display:flex;gap:8px">
-        <button id="signout" class="btn secondary">Sign out</button>
-        <a href="signup.html" class="muted">Back to signup</a>
-      </div>
-    </main>
+        <!-- Stats -->
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-icon teal">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+            </div>
+            <div class="stat-meta">
+              <div class="stat-label">Courses in progress</div>
+              <div class="stat-value">3</div>
+              <div class="stat-sub">2 nearly mastered</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon indigo">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82 3.75 3.75M4.93 19.75l-3.75-3.75"/></svg>
+            </div>
+            <div class="stat-meta">
+              <div class="stat-label">Skills mastered</div>
+              <div class="stat-value">8</div>
+              <div class="stat-sub">Electrical &amp; AI path</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon gold">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            </div>
+            <div class="stat-meta">
+              <div class="stat-label">Practice hours</div>
+              <div class="stat-value" id="statHours">0</div>
+              <div class="stat-sub">This week</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon cyan">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <div class="stat-meta">
+              <div class="stat-label">Day streak</div>
+              <div class="stat-value" id="streakStat">0</div>
+              <div class="stat-sub">Keep it going</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-grid">
+          <!-- Left column -->
+          <div>
+            <!-- Continue learning -->
+            <div class="section-row">
+              <h2>Continue learning</h2>
+              <a href="catalog.html" class="section-link">Browse all courses →</a>
+            </div>
+            <div class="course-grid" id="continueGrid">
+              <div class="course-card">
+                <div class="course-card-inner">
+                  <div class="course-thumb gradient-electric">
+                    <span class="course-level">Intermediate</span>
+                    <div class="course-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                    </div>
+                    <div class="course-progress-ring">62%</div>
+                  </div>
+                  <div class="course-body">
+                    <h4>Electrical Wiring Fundamentals</h4>
+                    <p>Wire outlets, switches, and read schematics safely.</p>
+                    <div class="course-meta">
+                      <span><span class="dot online"></span>Lesson 7 of 12</span>
+                      <span>1.4h left</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="course-card">
+                <div class="course-card-inner">
+                  <div class="course-thumb gradient-ai">
+                    <span class="course-level">Beginner</span>
+                    <div class="course-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="5" cy="5" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 11h10M7 13l7 4M17 11l-7 4M7 13a4 4 0 0 1 0-2M17 13a4 4 0 0 1 0-2"/></svg></svg>
+                    </div>
+                    <div class="course-progress-ring">35%</div>
+                  </div>
+                  <div class="course-body">
+                    <h4>Intro to Machine Learning</h4>
+                    <p>Train your first model and learn the AI pipeline.</p>
+                    <div class="course-meta">
+                      <span><span class="dot online"></span>Lesson 3 of 9</span>
+                      <span>2.0h left</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="course-card">
+                <div class="course-card-inner">
+                  <div class="course-thumb gradient-carpentry">
+                    <span class="course-level">Beginner</span>
+                    <div class="course-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4l6 6-9.5 9.5a2 2 0 0 1-2.83 0L3 15l9-9"/><path d="M9 7l6 6"/></svg>
+                    </div>
+                    <div class="course-progress-ring">80%</div>
+                  </div>
+                  <div class="course-body">
+                    <h4>Cabinet Joinery Basics</h4>
+                    <p>Master dovetail and mortise-and-tenon joints.</p>
+                    <div class="course-meta">
+                      <span><span class="dot busy"></span>Lesson 10 of 12</span>
+                      <span>0.5h left</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Assessments -->
+            <div class="section-row" style="margin-top:32px" id="assessment">
+              <h2>Upcoming assessments</h2>
+              <a href="catalog.html#simulations" class="section-link">Practice now →</a>
+            </div>
+            <div class="card" style="overflow:hidden">
+              <table class="data-table">
+                <thead>
+                  <tr><th>Assessment</th><th>Skill</th><th>Due</th><th>Status</th><th>Score</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Practical Circuit Build</td><td>Electrical</td><td>Sep 18</td><td><span class="badge warning">Scheduled</span></td><td>—</td></tr>
+                  <tr><td>Voltage Measurement</td><td>Electrical</td><td>Completed</td><td><span class="badge success">Passed</span></td><td>91%</td></tr>
+                  <tr><td>Dovetail Joint</td><td>Carpentry</td><td>Completed</td><td><span class="badge success">Passed</span></td><td>88%</td></tr>
+                  <tr><td>Model Training Basics</td><td>AI</td><td>Completed</td><td><span class="badge info">Graded</span></td><td>76%</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Right column -->
+          <div>
+            <!-- Skill tree 3D scene -->
+            <div class="section-row" id="skilltree">
+              <h2>Skill tree</h2>
+              <span class="badge info">Interactive 3D</span>
+            </div>
+            <div class="canvas-stage learning-scene" id="sceneWrap">
+              <canvas id="skillCanvas"></canvas>
+            </div>
+
+            <!-- Progress -->
+            <div class="section-row" style="margin-top:24px">
+              <h2>Skill progress</h2>
+            </div>
+            <div class="card">
+              <div class="card-body">
+                <div class="progress-row"><span class="p-label">Electrical</span><div class="progress-track p-bar"><div class="progress-fill" style="width:72%"></div></div><span class="p-value">72%</span></div>
+                <div class="progress-row"><span class="p-label">Carpentry</span><div class="progress-track p-bar"><div class="progress-fill" style="width:48%"></div></div><span class="p-value">48%</span></div>
+                <div class="progress-row"><span class="p-label">Machine Learning</span><div class="progress-track p-bar"><div class="progress-fill" style="width:35%"></div></div><span class="p-value">35%</span></div>
+                <div class="progress-row"><span class="p-label">Culinary</span><div class="progress-track p-bar"><div class="progress-fill" style="width:22%"></div></div><span class="p-value">22%</span></div>
+                <div class="progress-row"><span class="p-label">Robotics</span><div class="progress-track p-bar"><div class="progress-fill" style="width:15%"></div></div><span class="p-value">15%</span></div>
+              </div>
+            </div>
+
+            <!-- Streak -->
+            <div class="section-row" style="margin-top:24px">
+              <h2>Weekly practice</h2>
+            </div>
+            <div class="card">
+              <div class="card-body">
+                <div class="streak-days">
+                  <div class="streak-day complete"><div class="day">Mon</div><div class="date">7</div></div>
+                  <div class="streak-day complete"><div class="day">Tue</div><div class="date">8</div></div>
+                  <div class="streak-day complete"><div class="day">Wed</div><div class="date">9</div></div>
+                  <div class="streak-day complete"><div class="day">Thu</div><div class="date">10</div></div>
+                  <div class="streak-day complete"><div class="day">Fri</div><div class="date">11</div></div>
+                  <div class="streak-day today"><div class="day">Today</div><div class="date">12</div></div>
+                  <div class="streak-day"><div class="day">Sun</div><div class="date">13</div></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Achievements -->
+            <div class="section-row" style="margin-top:24px" id="achievements">
+              <h2>Achievements</h2>
+            </div>
+            <div class="card">
+              <div class="card-body skill-chips">
+                <span class="skill-chip">
+                  <span class="chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
+                  7-day streak
+                </span>
+                <span class="skill-chip">
+                  <span class="chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0f766e" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+                  First circuit built
+                </span>
+                <span class="chip-icon" style="display:none"></span>
+                <span class="skill-chip">
+                  <span class="chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.48 12.52 17 22l-5-3-5 3 1.52-9.48"/></svg></span>
+                  Problem solver
+                </span>
+                <span class="skill-chip">
+                  <span class="chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>
+                  Safety certified
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
   </div>
 
-  <script>
-    function getUser(){
-      try { return JSON.parse(localStorage.getItem('skillscape-user') || 'null'); } catch(e){return null}
-    }
-    const profile = document.getElementById('profile');
-    const user = getUser();
-    if (user) {
-      profile.innerHTML = `<h3 style="margin:0">${user.name || user.email}</h3><div class="muted">${user.email}</div>`
-    } else {
-      profile.innerHTML = `<div class="muted">No profile in storage. You may be signed out.</div>`
-    }
-    document.getElementById('signout').addEventListener('click', ()=>{
-      localStorage.removeItem('skillscape-token');
-      localStorage.removeItem('skillscape-user');
-      window.location.href = 'signin.html';
-    });
-  </script>
+  <div class="toast-wrap" id="toastWrap"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
