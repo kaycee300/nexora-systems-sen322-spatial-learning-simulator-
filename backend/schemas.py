@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
+from datetime import datetime
 
 try:
     from pydantic import ConfigDict
@@ -91,7 +92,7 @@ class ProjectResponse(BaseModel):
     icon: str
     gradient: str
     is_simulation: bool
-    created_at: Optional[str] = None
+    created_at: Optional[datetime] = None
 
     if ConfigDict is not None:
         model_config = ConfigDict(from_attributes=True)
@@ -107,7 +108,8 @@ class EnrollmentOut(BaseModel):
     progress: int
     status: str
     score: Optional[int] = None
-    completed_at: Optional[str] = None
+    completed_at: Optional[datetime] = None
+    enrolled_at: Optional[datetime] = None
 
     if ConfigDict is not None:
         model_config = ConfigDict(from_attributes=True)

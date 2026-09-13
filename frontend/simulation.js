@@ -159,16 +159,15 @@
     ax.y = 0.14; bx.y = 0.14;
     const dir = bx.clone().sub(ax);
     const len = dir.length();
-    wire.scale.y = len;
+    wire.scale.set(1, len, 1);
     wire.position.copy(ax.clone().add(bx).multiplyScalar(0.5));
-    wire.rotation.x = Math.PI / 2;
-    wire.lookAt(bx);
-    wire.rotateX(Math.PI / 2);
+    wire.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
     scene.add(wire);
     wires[label] = wire;
 
     connected[label] = true;
     completedCount += 1;
+    connectedCount += 1;
     addGlobe(c);
   }
 
@@ -223,7 +222,7 @@
       if (data.circuit === selected.circuit) {
         connectWire(selected.circuit);
         selected = null;
-        markTask(selectedNothing ? 0 : CIRCUITS.findIndex((c) => c.label === data.circuit) + 1);
+        markTask(data.circuit);
         moves += 1;
         updateHud();
       } else {
@@ -235,12 +234,13 @@
     updateHud();
   }
 
-  let selectedNothing = true;
-  function markTask(idx) {
+  let connectedCount = 0;
+  function markTask(label) {
+    // Task 1 = power source (marked on first connection), 2-5 = circuits A-D
+    const taskIdx = connectedCount === 1 ? 1 : CIRCUITS.findIndex((c) => c.label === label) + 2;
     const tasks = document.querySelectorAll('#taskList .task');
-    if (idx >= 1 && idx <= 5) {
-      tasks[idx - 1].classList.add('done');
-      selectedNothing = false;
+    for (let i = 0; i < taskIdx; i++) {
+      if (i < tasks.length) tasks[i].classList.add('done');
     }
     setTimeout(() => {
       if (completedCount === 4) {
@@ -249,8 +249,6 @@
       }
     }, 250);
   }
-  // task 1 (power source) sets itself complete at start of session interactivity
-  document.querySelector('#taskList .task') && document.querySelector('#taskList .task').classList.remove('done');
 
   canvas.addEventListener('click', handleClick);
 
@@ -327,7 +325,7 @@
   document.getElementById('resetBtn').addEventListener('click', () => {
     Object.keys(wires).forEach((k) => scene.remove(wires[k]));
     Object.assign(connected, {});
-    completedCount = 0; moves = 0; selected = null;
+    completedCount = 0; connectedCount = 0; moves = 0; selected = null;
     document.querySelectorAll('#taskList .task').forEach((t) => t.classList.remove('done'));
     document.querySelectorAll('#taskList .task')[0].classList.add('done');
     document.getElementById('assessBtn').disabled = true;

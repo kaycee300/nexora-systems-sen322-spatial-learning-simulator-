@@ -240,6 +240,11 @@ function showToast(message, type = 'info') {
     card.addEventListener('mouseleave', () => {
       inner.style.transform = 'rotateY(0) rotateX(0)';
     });
+    card.addEventListener('click', () => {
+      if (card.dataset.sim) {
+        window.location.href = `simulation.html?course=${encodeURIComponent(card.dataset.sim)}`;
+      }
+    });
   });
 })();
 
