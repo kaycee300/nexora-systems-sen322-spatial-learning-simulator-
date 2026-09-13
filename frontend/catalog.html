@@ -246,7 +246,13 @@
           });
         } catch (err) { /* backend offline — launch anyway */ }
       }
-      window.location.href = `simulation.html?course=${encodeURIComponent(title)}&project=${id}`;
+      const simCat = COURSES.find((c) => c.id === Number(id))?.cat || 'electrical';
+      const q = [];
+      if (simCat !== 'electrical') q.push(`type=${simCat}`);
+      q.push(`course=${encodeURIComponent(title)}`);
+      q.push(`project=${id}`);
+      const page = simCat === 'electrical' ? 'simulation.html' : 'workshop.html';
+      window.location.href = `${page}?${q.join('&')}`;
     });
 
     // Handle assessment result from simulation

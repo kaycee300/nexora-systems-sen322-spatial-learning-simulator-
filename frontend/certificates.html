@@ -130,38 +130,67 @@
   <div class="toast-wrap" id="toastWrap"></div>
 
   <script>
-    const CERTS = [
-      { title: 'Circuit Wiring Fundamentals', meta: 'Practical assessment · Score 91%', date: 'August 2026', icon: '⚡' },
-      { title: 'Multimeter Mastery', meta: 'Basic proficiency badge', date: 'July 2026', icon: '📟' },
-      { title: 'Voltage Measurement', meta: 'Practical assessment · Score 88%', date: 'June 2026', icon: '🔌' },
-    ];
-
+    const BACKEND = 'http://127.0.0.1:8084';
     const grid = document.getElementById('certGrid');
     const user = (function(){ try { return JSON.parse(localStorage.getItem('skillscape-user')||'null'); } catch(e){ return null; } })();
     const fullName = (user && (user.name || user.email)) || 'SkillScape Learner';
 
-    function certHtml(c) {
-      const code = ('SS-' + c.title.replace(/[^a-z0-9]+/gi,'-').slice(0,12) + '-' + Math.random().toString(36).slice(2,8)).toUpperCase();
+    function certHtml(e) {
+      const p = e.project || {};
+      const title = p.title || ('SkillScape course #' + e.project_id);
+      const score = e.score ?? 'Pass';
+      const meta = `Practical simulation · Score ${typeof score === 'number' ? score + '%' : score}`;
+      let date = 'Recently completed';
+      if (e.completed_at) {
+        const d = new Date(e.completed_at.includes('Z') ? e.completed_at : e.completed_at + 'Z');
+        date = d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+      }
+      const icon = p.icon === 'bolt' ? '⚡' : p.icon === 'brain' ? '🧠' : p.category === 'culinary' ? '🍳' : p.category === 'carpentry' ? '🪚' : p.category === 'plumbing' ? '🔧' : p.category === 'robotics' ? '🤖' : '🎓';
+      const code = ('SS-' + String(p.category || 'skill').replace(/[^a-z0-9]+/gi,'-').slice(0,12) + '-' + Math.random().toString(36).slice(2,8)).toUpperCase();
       return `
       <div class="cert">
         <div class="cert-inner">
-          <div class="cert-icon">${c.icon}</div>
-          <h2>${c.title}</h2>
-          <div class="cert-meta">${c.meta}</div>
-          <div class="awarded">This certifies that <strong>${fullName}</strong> completed this SkillScape course and demonstrated the required competencies on ${c.date}.</div>
+          <div class="cert-icon">${icon}</div>
+          <h2>${title}</h2>
+          <div class="cert-meta">${meta}</div>
+          <div class="awarded">This certifies that <strong>${fullName}</strong> completed this SkillScape course and demonstrated the required competencies on ${date}.</div>
           <div class="cert-footer">
             <span class="seal">◉ Certified SkillScape</span>
             <span class="verify">ID: ${code}</span>
           </div>
           <div class="cert-actions">
-            <button class="btn primary" data-title="${c.title}">Share</button>
-            <button class="btn secondary" data-title="${c.title}">View details</button>
+            <button class="btn primary" data-title="${title}">Share</button>
+            <button class="btn secondary" data-title="${title}">View details</button>
           </div>
         </div>
       </div>`;
     }
 
-    grid.innerHTML = CERTS.map(certHtml).join('');
+    function renderEmpty() {
+      grid.innerHTML = `
+        <div class="card" style="grid-column:1/-1;padding:40px;text-align:center;color:var(--text-muted)">
+          <div style="font-size:2rem;margin-bottom:8px">🎖️</div>
+          <strong style="display:block;color:var(--text);margin-bottom:4px">No certificates yet</strong>
+          Complete a simulation with a passing score to earn your first certificate.
+          <div style="margin-top:16px"><a class="btn primary" href="catalog.html">Browse courses</a></div>
+        </div>`;
+    }
+
+    const token = localStorage.getItem('skillscape-token');
+    if (!token) {
+      renderEmpty();
+    } else {
+      fetch(`${BACKEND}/projects/enrollments/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((r) => (r.ok ? r.json() : Promise.reject(r)))
+        .then((enrollments) => {
+          const done = enrollments.filter((e) => e.status === 'completed' && (e.project || {}).is_simulation !== false);
+          if (!done.length) { renderEmpty(); return; }
+          grid.innerHTML = done.map(certHtml).join('');
+        })
+        .catch(() => renderEmpty());
+    }
 
     grid.addEventListener('click', (e) => {
       const btn = e.target.closest('button[data-title]');

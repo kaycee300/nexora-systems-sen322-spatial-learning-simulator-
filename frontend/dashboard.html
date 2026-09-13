@@ -116,8 +116,8 @@
             </div>
             <div class="stat-meta">
               <div class="stat-label">Courses in progress</div>
-              <div class="stat-value">3</div>
-              <div class="stat-sub">2 nearly mastered</div>
+              <div class="stat-value" id="statProgress">0</div>
+              <div class="stat-sub">Your active courses</div>
             </div>
           </div>
           <div class="stat-card">
@@ -125,9 +125,9 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82 3.75 3.75M4.93 19.75l-3.75-3.75"/></svg>
             </div>
             <div class="stat-meta">
-              <div class="stat-label">Skills mastered</div>
-              <div class="stat-value">8</div>
-              <div class="stat-sub">Electrical &amp; AI path</div>
+              <div class="stat-label">Courses completed</div>
+              <div class="stat-value" id="statCompleted">0</div>
+              <div class="stat-sub">Certificates</div>
             </div>
           </div>
           <div class="stat-card">
@@ -135,9 +135,9 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
             </div>
             <div class="stat-meta">
-              <div class="stat-label">Practice hours</div>
-              <div class="stat-value" id="statHours">0</div>
-              <div class="stat-sub">This week</div>
+              <div class="stat-label">Best score</div>
+              <div class="stat-value" id="statBestScore">0%</div>
+              <div class="stat-sub">Highest assessment</div>
             </div>
           </div>
           <div class="stat-card">
@@ -146,7 +146,7 @@
             </div>
             <div class="stat-meta">
               <div class="stat-label">Day streak</div>
-              <div class="stat-value" id="streakStat">0</div>
+              <div class="stat-value" id="statStreak">0</div>
               <div class="stat-sub">Keep it going</div>
             </div>
           </div>
@@ -177,13 +177,10 @@
             <div class="card" style="overflow:hidden">
               <table class="data-table">
                 <thead>
-                  <tr><th>Assessment</th><th>Skill</th><th>Due</th><th>Status</th><th>Score</th></tr>
+                  <tr><th>Assessment</th><th>Skill</th><th>Status</th><th>Score</th></tr>
                 </thead>
-                <tbody>
-                  <tr><td>Practical Circuit Build</td><td>Electrical</td><td>Sep 18</td><td><span class="badge warning">Scheduled</span></td><td>—</td></tr>
-                  <tr><td>Voltage Measurement</td><td>Electrical</td><td>Completed</td><td><span class="badge success">Passed</span></td><td>91%</td></tr>
-                  <tr><td>Dovetail Joint</td><td>Carpentry</td><td>Completed</td><td><span class="badge success">Passed</span></td><td>88%</td></tr>
-                  <tr><td>Model Training Basics</td><td>AI</td><td>Completed</td><td><span class="badge info">Graded</span></td><td>76%</td></tr>
+                <tbody id="assessBody">
+                  <tr><td colspan="4" style="color:var(--text-muted);text-align:center">Complete a simulation to record your first assessment.</td></tr>
                 </tbody>
               </table>
             </div>
@@ -205,29 +202,19 @@
               <h2>Skill progress</h2>
             </div>
             <div class="card">
-              <div class="card-body">
-                <div class="progress-row"><span class="p-label">Electrical</span><div class="progress-track p-bar"><div class="progress-fill" style="width:72%"></div></div><span class="p-value">72%</span></div>
-                <div class="progress-row"><span class="p-label">Carpentry</span><div class="progress-track p-bar"><div class="progress-fill" style="width:48%"></div></div><span class="p-value">48%</span></div>
-                <div class="progress-row"><span class="p-label">Machine Learning</span><div class="progress-track p-bar"><div class="progress-fill" style="width:35%"></div></div><span class="p-value">35%</span></div>
-                <div class="progress-row"><span class="p-label">Culinary</span><div class="progress-track p-bar"><div class="progress-fill" style="width:22%"></div></div><span class="p-value">22%</span></div>
-                <div class="progress-row"><span class="p-label">Robotics</span><div class="progress-track p-bar"><div class="progress-fill" style="width:15%"></div></div><span class="p-value">15%</span></div>
+              <div class="card-body" id="skillProgress">
+                <div style="color:var(--text-muted);font-size:0.85rem">Complete simulations to build your skill progress here.</div>
               </div>
             </div>
 
             <!-- Streak -->
-            <div class="section-row" style="margin-top:24px">
+            <div class="section-row" style="margin-top:24px" id="weekSection">
               <h2>Weekly practice</h2>
             </div>
-            <div class="card">
+            <div class="card" id="weekCard">
               <div class="card-body">
-                <div class="streak-days">
-                  <div class="streak-day complete"><div class="day">Mon</div><div class="date">7</div></div>
-                  <div class="streak-day complete"><div class="day">Tue</div><div class="date">8</div></div>
-                  <div class="streak-day complete"><div class="day">Wed</div><div class="date">9</div></div>
-                  <div class="streak-day complete"><div class="day">Thu</div><div class="date">10</div></div>
-                  <div class="streak-day complete"><div class="day">Fri</div><div class="date">11</div></div>
-                  <div class="streak-day today"><div class="day">Today</div><div class="date">12</div></div>
-                  <div class="streak-day"><div class="day">Sun</div><div class="date">13</div></div>
+                <div class="streak-days" id="streakDays">
+                  <div style="color:var(--text-muted);font-size:0.85rem">Practice on any day to start your streak.</div>
                 </div>
               </div>
             </div>
@@ -236,25 +223,9 @@
             <div class="section-row" style="margin-top:24px" id="achievements">
               <h2>Achievements</h2>
             </div>
-            <div class="card">
-              <div class="card-body skill-chips">
-                <span class="skill-chip">
-                  <span class="chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
-                  7-day streak
-                </span>
-                <span class="skill-chip">
-                  <span class="chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0f766e" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
-                  First circuit built
-                </span>
-                <span class="chip-icon" style="display:none"></span>
-                <span class="skill-chip">
-                  <span class="chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.48 12.52 17 22l-5-3-5 3 1.52-9.48"/></svg></span>
-                  Problem solver
-                </span>
-                <span class="skill-chip">
-                  <span class="chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>
-                  Safety certified
-                </span>
+            <div class="card" id="achievementCard">
+              <div class="card-body skill-chips" id="achievementChips">
+                <span style="color:var(--text-muted);font-size:0.85rem">Earn achievements by completing simulations.</span>
               </div>
             </div>
           </div>
@@ -266,66 +237,149 @@
   <div class="toast-wrap" id="toastWrap"></div>
 
   <script>
-    /* Live data: fetch user enrollments from the backend */
-    (function loadEnrollments() {
+    /* Live data: derive dashboard from real backend enrollments */
+    (function loadDashboard() {
       const BACKEND = 'http://127.0.0.1:8084';
       const token = localStorage.getItem('skillscape-token');
-      const grid = document.getElementById('continueGrid');
-      if (!token || !grid) return;
+      if (!token) return;
 
       fetch(`${BACKEND}/projects/enrollments/me`, {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((r) => (r.ok ? r.json() : Promise.reject(r)))
         .then((enrollments) => {
+          const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
           const open = enrollments.filter((e) => e.status === 'in_progress');
           const done = enrollments.filter((e) => e.status === 'completed');
+          const best = enrollments.reduce((m, e) => Math.max(m, e.score || 0), 0);
+          const todayStr = new Date().toISOString().slice(0, 10);
+          const practicedToday = enrollments.some((e) => e.completed_at && e.completed_at.slice(0, 10) === todayStr);
 
-          const statVal = document.querySelector('.stat-card .stat-value');
-          if (statVal && open.length) statVal.textContent = open.length;
+          // Stats
+          set('statProgress', open.length);
+          set('statCompleted', done.length);
+          set('statBestScore', done.length ? `${best}%` : '0%');
+          set('statStreak', practicedToday ? 1 : 0);
 
-          if (!enrollments.length) {
-            grid.innerHTML = `
-              <div class="card" style="grid-column:1/-1;padding:26px;text-align:center;color:var(--text-muted)">
-                No courses yet. <a href="catalog.html">Browse the catalog</a> and start your first simulation.
-              </div>`;
-            return;
+          // Continue learning grid
+          const grid = document.getElementById('continueGrid');
+          if (grid) {
+            if (!enrollments.length) {
+              grid.innerHTML = `
+                <div class="card" style="grid-column:1/-1;padding:26px;text-align:center;color:var(--text-muted)">
+                  No courses yet. <a href="catalog.html">Browse the catalog</a> and start your first simulation.
+                </div>`;
+            } else {
+              grid.innerHTML = enrollments.map((e) => {
+                const p = e.project || {};
+                const pct = e.progress || 0;
+                const grad = p.gradient || 'gradient-electric';
+                const bar = pct >= 100
+                  ? `<span class="badge success">Completed${e.score ? ` · ${e.score}%` : ''}</span>`
+                  : `
+                    <div style="margin-top:10px">
+                      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+                      <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">${pct}% complete</div>
+                    </div>`;
+                return `
+                  <div class="course-card" data-sim="${p.category || 'electrical'}" data-project="${e.project_id}">
+                    <div class="course-card-inner">
+                      <div class="course-thumb ${grad}">
+                        <span class="course-level">${p.level || 'Beginner'}</span>
+                        <div class="course-progress-ring">${pct < 100 ? pct + '%' : '✓'}</div>
+                      </div>
+                      <div class="course-body">
+                        <h4>${p.title || 'Course'}</h4>
+                        <p style="margin-bottom:6px">${p.level || ''} · ${p.category || ''}</p>
+                        <div class="course-meta">
+                          <span><span class="dot ${pct >= 100 ? 'online' : 'busy'}"></span>${pct >= 100 ? 'Completed' : 'In progress'}</span>
+                          <span class="sim-link">${pct >= 100 ? 'Review' : pct > 0 ? '▶ Resume simulator' : '▶ Start simulator'}</span>
+                        </div>
+                        ${bar}
+                      </div>
+                    </div>
+                  </div>`;
+              }).join('');
+            }
           }
 
-          grid.innerHTML = enrollments.map((e) => {
-            const p = e.project || {};
-            const pct = e.progress || 0;
-            const grad = p.gradient || 'gradient-electric';
-            const icon = p.icon || 'bolt';
-            const bar = pct >= 100
-              ? `<span class="badge success">Completed${e.score ? ` · ${e.score}%` : ''}</span>`
-              : `
-                <div style="margin-top:10px">
-                  <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
-                  <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">${pct}% complete</div>
-                </div>`;
-            return `
-              <div class="course-card" data-sim="${p.category || 'electrical'}" data-project="${e.project_id}">
-                <div class="course-card-inner">
-                  <div class="course-thumb ${grad}">
-                    <span class="course-level">${p.level || 'Beginner'}</span>
-                    <div class="course-progress-ring">${pct < 100 ? pct + '%' : '✓'}</div>
-                  </div>
-                  <div class="course-body">
-                    <h4>${p.title || 'Course'}</h4>
-                    <p style="margin-bottom:6px">${p.level || ''} · ${p.category || ''}</p>
-                    <div class="course-meta">
-                      <span><span class="dot ${pct >= 100 ? 'online' : 'busy'}"></span>${pct >= 100 ? 'Completed' : 'In progress'}</span>
-                      <span class="sim-link">${pct >= 100 ? 'Review' : pct > 0 ? '▶ Resume simulator' : '▶ Start simulator'}</span>
-                    </div>
-                    ${bar}
-                  </div>
-                </div>
-              </div>`;
-          }).join('');
+          // Assessments
+          const assessBody = document.getElementById('assessBody');
+          if (assessBody) {
+            if (done.length) {
+              assessBody.innerHTML = done.map((e) => `
+                <tr>
+                  <td>${e.project ? e.project.title : 'Practical assessment'}</td>
+                  <td>${e.project ? e.project.category : 'General'}</td>
+                  <td><span class="badge success">Passed</span></td>
+                  <td>${e.score ?? '—'}${e.score ? '%' : ''}</td>
+                </tr>`).join('');
+            } else {
+              assessBody.innerHTML = '<tr><td colspan="4" style="color:var(--text-muted);text-align:center">Complete a simulation to record your first assessment.</td></tr>';
+            }
+          }
+
+          // Skill progress per category
+          const skillProgress = document.getElementById('skillProgress');
+          if (skillProgress) {
+            const byCat = {};
+            enrollments.forEach((e) => {
+              const cat = (e.project && e.project.category) || 'other';
+              byCat[cat] = byCat[cat] || [];
+              byCat[cat].push(e.progress || 0);
+            });
+            const cats = Object.keys(byCat);
+            if (cats.length) {
+              skillProgress.innerHTML = cats.map((cat) => {
+                const avg = Math.round(byCat[cat].reduce((a, b) => a + b, 0) / byCat[cat].length);
+                return `
+                  <div class="progress-row">
+                    <span class="p-label">${cat[0].toUpperCase() + cat.slice(1)}</span>
+                    <div class="progress-track p-bar"><div class="progress-fill" style="width:${avg}%"></div></div>
+                    <span class="p-value">${avg}%</span>
+                  </div>`;
+              }).join('');
+            }
+          }
+
+          // Weekly practice
+          const streakDays = document.getElementById('streakDays');
+          if (streakDays) {
+            if (practicedToday) {
+              const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+              const now = new Date();
+              const dayOfWeek = now.getDay();
+              streakDays.innerHTML = days.map((d, i) => {
+                const isToday = i === dayOfWeek;
+                const isComplete = i === dayOfWeek;
+                return `<div class="streak-day ${isToday ? 'today' : ''} ${isComplete ? 'complete' : ''}"><div class="day">${d}</div><div class="date">${now.getDate() - (dayOfWeek - i)}</div></div>`;
+              }).join('');
+            } else {
+              streakDays.innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem">Practice on any day to start your streak.</div>';
+            }
+          }
+
+          // Achievements (derived, earned only)
+          const chips = document.getElementById('achievementChips');
+          const achCard = document.getElementById('achievementCard');
+          if (chips && achCard) {
+            const ach = [];
+            if (done.length >= 1) ach.push(['First simulation', '🎯']);
+            if (enrollments.some((e) => (e.project || {}).category === 'electrical' && e.status === 'completed')) ach.push(['Circuit builder', '⚡']);
+            if (best >= 75) ach.push(['Problem solver', '🧠']);
+            if (done.length >= 3) ach.push(['Triple threat', '🔥']);
+            if (ach.length) {
+              chips.innerHTML = ach.map(([label, icon]) => `
+                <span class="skill-chip">
+                  <span class="chip-icon">${icon}</span>${label}
+                </span>`).join('');
+            } else {
+              achCard.style.display = 'none';
+            }
+          }
         })
         .catch((err) => {
-          console.warn('Could not load enrollments:', err);
+          console.warn('Could not load dashboard data:', err);
         });
     })();
   </script>

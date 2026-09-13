@@ -104,14 +104,6 @@ function showToast(message, type = 'info') {
   });
 })();
 
-/* ---------- Randomize live-ish stats ---------- */
-(function liveStats() {
-  const hours = document.getElementById('statHours');
-  const streak = document.getElementById('streakStat');
-  if (hours) hours.textContent = (1 + Math.floor(Math.random() * 11));
-  if (streak) streak.textContent = (3 + Math.floor(Math.random() * 9));
-})();
-
 /* ---------- 3D Skill Tree (Three.js r128) ---------- */
 (function skillTree() {
   const canvas = document.getElementById('skillCanvas');
@@ -260,8 +252,13 @@ function showToast(message, type = 'info') {
     });
     card.addEventListener('click', () => {
       if (card.dataset.sim) {
-        const withProject = card.dataset.project ? `&project=${card.dataset.project}` : '';
-        window.location.href = `simulation.html?course=${encodeURIComponent(card.dataset.sim)}${withProject}`;
+        const cat = card.dataset.sim;
+        const q = [];
+        if (cat !== 'electrical') q.push(`type=${cat}`);
+        q.push(`course=${encodeURIComponent(cat)}`);
+        if (card.dataset.project) q.push(`project=${card.dataset.project}`);
+        const page = cat === 'electrical' ? 'simulation.html' : 'workshop.html';
+        window.location.href = `${page}?${q.join('&')}`;
       }
     });
   });
