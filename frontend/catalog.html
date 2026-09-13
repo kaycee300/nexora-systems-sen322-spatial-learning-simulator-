@@ -176,13 +176,17 @@
     const count = document.getElementById('resultCount');
     const search = document.getElementById('searchInput');
     const catBtns = document.querySelectorAll('.cat-btn');
+    const BACKEND = 'http://127.0.0.1:8084';
+
+    // map static courses to backend project ids (seed order = insert order)
+    COURSES.forEach((c, i) => { c.id = i + 1; });
 
     let activeCat = 'all';
     let query = '';
 
     function cardHtml(c) {
       return `
-      <div class="course-card" data-cat="${c.cat}" data-title="${c.title.toLowerCase()}" data-desc="${c.desc.toLowerCase()}">
+      <div class="course-card" data-cat="${c.cat}" data-title="${c.title.toLowerCase()}" data-desc="${c.desc.toLowerCase()}" data-id="${c.id}">
         <div class="course-card-inner">
           <div class="course-thumb ${c.grad}">
             <span class="course-level">${c.level}</span>
@@ -224,14 +228,25 @@
       render();
     }));
 
-    grid.addEventListener('click', (e) => {
+    grid.addEventListener('click', async (e) => {
       const card = e.target.closest('.course-card');
       if (!card) return;
+      const id = card.dataset.id;
       const title = card.dataset.title;
-      const isSimCourse = COURSES.some((c) => c.title.toLowerCase() === title && c.sim);
-      if (isSimCourse) {
-        window.location.href = `simulation.html?course=${encodeURIComponent(title)}?from=catalog`;
+      const isSimCourse = COURSES.some((c) => c.id === Number(id) && c.sim);
+      if (!isSimCourse) return;
+
+      // Try to enroll (auth-optional in demo: enroll if a token exists)
+      const token = localStorage.getItem('skillscape-token');
+      if (token) {
+        try {
+          await fetch(`${BACKEND}/projects/${id}/enroll`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+          });
+        } catch (err) { /* backend offline — launch anyway */ }
       }
+      window.location.href = `simulation.html?course=${encodeURIComponent(title)}&project=${id}`;
     });
 
     // Handle assessment result from simulation

@@ -260,7 +260,8 @@ function showToast(message, type = 'info') {
     });
     card.addEventListener('click', () => {
       if (card.dataset.sim) {
-        window.location.href = `simulation.html?course=${encodeURIComponent(card.dataset.sim)}`;
+        const withProject = card.dataset.project ? `&project=${card.dataset.project}` : '';
+        window.location.href = `simulation.html?course=${encodeURIComponent(card.dataset.sim)}${withProject}`;
       }
     });
   });

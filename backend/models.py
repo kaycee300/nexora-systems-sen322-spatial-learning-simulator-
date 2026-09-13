@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, DateTime, func, Text, ForeignKey
+from sqlalchemy.orm import relationship
 from .database import Base
 
 
@@ -62,3 +63,5 @@ class Enrollment(Base):
     score = Column(Integer, nullable=True)
     completed_at = Column(DateTime, nullable=True)
     enrolled_at = Column(DateTime, server_default=func.now())
+
+    project = relationship("Project")

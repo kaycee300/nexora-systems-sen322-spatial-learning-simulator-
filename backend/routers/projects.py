@@ -130,7 +130,7 @@ def enroll(
     return enrollment
 
 
-@router.get("/enrollments/me", response_model=List[schemas.EnrollmentOut])
+@router.get("/enrollments/me", response_model=List[schemas.EnrollmentWithProject])
 def my_enrollments(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     return (
         db.query(models.Enrollment)
@@ -138,3 +138,37 @@ def my_enrollments(db: Session = Depends(get_db), current_user=Depends(get_curre
         .order_by(models.Enrollment.enrolled_at.desc())
         .all()
     )
+
+
+@router.put("/{project_id}/progress", response_model=schemas.EnrollmentOut)
+def update_progress(
+    project_id: int,
+    payload: dict,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Update enrollment progress/score from a simulation session."""
+    enrollment = (
+        db.query(models.Enrollment)
+        .filter(
+            models.Enrollment.user_id == current_user.id,
+            models.Enrollment.project_id == project_id,
+        )
+        .first()
+    )
+    if not enrollment:
+        raise HTTPException(status_code=404, detail="Not enrolled in this project")
+    progress = payload.get("progress")
+    score = payload.get("score")
+    if progress is not None:
+        enrollment.progress = max(0, min(100, int(progress)))
+    if score is not None:
+        enrollment.score = int(score)
+    if enrollment.progress >= 100:
+        enrollment.status = "completed"
+        # keep server-side UTC-naive consistent with SQLite
+        from datetime import datetime, timezone
+        enrollment.completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
+    db.commit()
+    db.refresh(enrollment)
+    return enrollment

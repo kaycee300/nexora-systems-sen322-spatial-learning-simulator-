@@ -161,63 +161,10 @@
               <a href="catalog.html" class="section-link">Browse all courses →</a>
             </div>
             <div class="course-grid" id="continueGrid">
-              <div class="course-card" data-sim="electrical">
-                <div class="course-card-inner">
-                  <div class="course-thumb gradient-electric">
-                    <span class="course-level">Intermediate</span>
-                    <div class="course-icon">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                    </div>
-                    <div class="course-progress-ring">62%</div>
-                  </div>
-                  <div class="course-body">
-                    <h4>Electrical Wiring Fundamentals</h4>
-                    <p>Wire outlets, switches, and read schematics safely.</p>
-                    <div class="course-meta">
-                      <span><span class="dot online"></span>Lesson 7 of 12</span>
-                      <span class="sim-link">▶ Open simulator</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="course-card" data-sim="ai">
-                <div class="course-card-inner">
-                  <div class="course-thumb gradient-ai">
-                    <span class="course-level">Beginner</span>
-                    <div class="course-icon">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="5" cy="5" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 11h10M7 13l7 4M17 11l-7 4M7 13a4 4 0 0 1 0-2M17 13a4 4 0 0 1 0-2"/></svg>
-                    </div>
-                    <div class="course-progress-ring">35%</div>
-                  </div>
-                  <div class="course-body">
-                    <h4>Intro to Machine Learning</h4>
-                    <p>Train your first model and learn the AI pipeline.</p>
-                    <div class="course-meta">
-                      <span><span class="dot online"></span>Lesson 3 of 9</span>
-                      <span class="sim-link">▶ Open simulator</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="course-card" data-sim="carpentry">
-                <div class="course-card-inner">
-                  <div class="course-thumb gradient-carpentry">
-                    <span class="course-level">Beginner</span>
-                    <div class="course-icon">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4l6 6-9.5 9.5a2 2 0 0 1-2.83 0L3 15l9-9"/><path d="M9 7l6 6"/></svg>
-                    </div>
-                    <div class="course-progress-ring">80%</div>
-                  </div>
-                  <div class="course-body">
-                    <h4>Cabinet Joinery Basics</h4>
-                    <p>Master dovetail and mortise-and-tenon joints.</p>
-                    <div class="course-meta">
-                      <span><span class="dot busy"></span>Lesson 10 of 12</span>
-                      <span class="sim-link">▶ Open simulator</span>
-                    </div>
-                  </div>
+              <div class="course-card">
+                <div class="course-card-inner" style="padding:0">
+                  <div class="course-thumb gradient-electric" style="height:110px;opacity:0.3"></div>
+                  <div class="course-body">Loading your enrolled courses…</div>
                 </div>
               </div>
             </div>
@@ -318,6 +265,70 @@
 
   <div class="toast-wrap" id="toastWrap"></div>
 
+  <script>
+    /* Live data: fetch user enrollments from the backend */
+    (function loadEnrollments() {
+      const BACKEND = 'http://127.0.0.1:8084';
+      const token = localStorage.getItem('skillscape-token');
+      const grid = document.getElementById('continueGrid');
+      if (!token || !grid) return;
+
+      fetch(`${BACKEND}/projects/enrollments/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((r) => (r.ok ? r.json() : Promise.reject(r)))
+        .then((enrollments) => {
+          const open = enrollments.filter((e) => e.status === 'in_progress');
+          const done = enrollments.filter((e) => e.status === 'completed');
+
+          const statVal = document.querySelector('.stat-card .stat-value');
+          if (statVal && open.length) statVal.textContent = open.length;
+
+          if (!enrollments.length) {
+            grid.innerHTML = `
+              <div class="card" style="grid-column:1/-1;padding:26px;text-align:center;color:var(--text-muted)">
+                No courses yet. <a href="catalog.html">Browse the catalog</a> and start your first simulation.
+              </div>`;
+            return;
+          }
+
+          grid.innerHTML = enrollments.map((e) => {
+            const p = e.project || {};
+            const pct = e.progress || 0;
+            const grad = p.gradient || 'gradient-electric';
+            const icon = p.icon || 'bolt';
+            const bar = pct >= 100
+              ? `<span class="badge success">Completed${e.score ? ` · ${e.score}%` : ''}</span>`
+              : `
+                <div style="margin-top:10px">
+                  <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+                  <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">${pct}% complete</div>
+                </div>`;
+            return `
+              <div class="course-card" data-sim="${p.category || 'electrical'}" data-project="${e.project_id}">
+                <div class="course-card-inner">
+                  <div class="course-thumb ${grad}">
+                    <span class="course-level">${p.level || 'Beginner'}</span>
+                    <div class="course-progress-ring">${pct < 100 ? pct + '%' : '✓'}</div>
+                  </div>
+                  <div class="course-body">
+                    <h4>${p.title || 'Course'}</h4>
+                    <p style="margin-bottom:6px">${p.level || ''} · ${p.category || ''}</p>
+                    <div class="course-meta">
+                      <span><span class="dot ${pct >= 100 ? 'online' : 'busy'}"></span>${pct >= 100 ? 'Completed' : 'In progress'}</span>
+                      <span class="sim-link">${pct >= 100 ? 'Review' : pct > 0 ? '▶ Resume simulator' : '▶ Start simulator'}</span>
+                    </div>
+                    ${bar}
+                  </div>
+                </div>
+              </div>`;
+          }).join('');
+        })
+        .catch((err) => {
+          console.warn('Could not load enrollments:', err);
+        });
+    })();
+  </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="app.js"></script>
 </body>

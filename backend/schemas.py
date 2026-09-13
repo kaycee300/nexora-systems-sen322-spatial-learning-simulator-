@@ -116,3 +116,24 @@ class EnrollmentOut(BaseModel):
     else:
         class Config:
             orm_mode = True
+
+
+class ProjectBrief(BaseModel):
+    id: int
+    title: str
+    category: str
+    level: str
+    lessons: int
+    icon: str
+    gradient: str
+    is_simulation: bool
+
+    if ConfigDict is not None:
+        model_config = ConfigDict(from_attributes=True)
+    else:
+        class Config:
+            orm_mode = True
+
+
+class EnrollmentWithProject(EnrollmentOut):
+    project: Optional[ProjectBrief] = None

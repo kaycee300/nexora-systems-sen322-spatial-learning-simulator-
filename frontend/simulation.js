@@ -191,7 +191,17 @@
     document.getElementById('hudScore').textContent = score;
     document.getElementById('hudMode').textContent = selected ? `Wiring ${selected.circuit}` : completedCount === 4 ? 'Complete!' : 'Pick wire';
     document.getElementById('assessBtn').disabled = completedCount < 4;
+
+    // proactive coach when stuck: many moves, no new circuit
+    if (moves >= 7 && completedCount < 2 && !stuckCoached) {
+      stuckCoached = true;
+      if (coachBox && coachMsg) {
+        coachBox.style.display = 'block';
+        coachMsg.innerHTML = `<span class="coach-tag">AI COACH</span><br>${TIPS.overMove[0]}`;
+      }
+    }
   }
+  let stuckCoached = false;
   updateHud();
 
   function handleClick(e) {
@@ -224,6 +234,7 @@
         selected = null;
         markTask(data.circuit);
         moves += 1;
+        stuckCoached = false;
         updateHud();
       } else {
         flashHint(`That terminal belongs to circuit ${data.circuit}.`);
@@ -325,19 +336,94 @@
   document.getElementById('resetBtn').addEventListener('click', () => {
     Object.keys(wires).forEach((k) => scene.remove(wires[k]));
     Object.assign(connected, {});
-    completedCount = 0; connectedCount = 0; moves = 0; selected = null;
+    completedCount = 0; connectedCount = 0; moves = 0; selected = null; stuckCoached = false;
     document.querySelectorAll('#taskList .task').forEach((t) => t.classList.remove('done'));
-    document.querySelectorAll('#taskList .task')[0].classList.add('done');
     document.getElementById('assessBtn').disabled = true;
     updateHud();
     flashHint('Session reset. Pick a wire coil to begin.');
   });
 
-  /* ---------- Assessment ---------- */
+  /* ---------- AI Coach (context-aware hint engine) ---------- */
+  const coachBox = document.getElementById('coachBox');
+  const coachMsg = document.getElementById('coachMsg');
+  const coachBtn = document.getElementById('coachBtn');
+  const coachStatus = document.getElementById('coachStatus');
+  const Q = 'ABCD';
+  const TIPS = {
+    start: [
+      'Every circuit needs a "from" and a "to" terminal. Pick a wire coil from the tray first, then click the matching terminal pair.',
+      'Start with the power source path — circuit A is the closest to the battery rail.',
+    ],
+    firstWire: [
+      'Good start! Now pick another coil and its two terminals. The terminal ring glows when a circuit is complete.',
+      'Tip: circuits are color-coded. Match the coil color to the terminal ring color.',
+    ],
+    stuck: [
+      'Feeling stuck? Each coil only fits its own two terminals — try hovering to highlight the pairs.',
+      'Efficiency hint: fewer moves means a higher score. Pick the right coil on the first try.',
+    ],
+    mid: [
+      'Halfway there. Prioritize completing any remaining single-pair circuit next.',
+      'You can drag the view to see all terminals clearly — hold and move the mouse.',
+    ],
+    nearly: [
+      'One circuit left. All four loads light up once every pair is connected.',
+      'Almost done! Check each of the remaining coils and their terminals.',
+    ],
+    done: [
+      'All circuits complete — submit the assessment to record your grade.',
+      'Great work! Your wiring is safe and correct. Hit Submit to finish.',
+    ],
+    overMove: [
+      `You've made many moves without a connection. Review the color codes — each coil has exactly one matching pair.`,
+    ],
+  };
+  let hintIdx = {};
+
+  function pickHint() {
+    const bucket = completedCount === 0 ? 'start'
+      : completedCount === 4 ? 'done'
+      : completedCount >= 3 ? 'nearly'
+      : completedCount === 1 && moves <= 3 ? 'firstWire'
+      : completedCount >= 2 ? 'mid'
+      : 'stuck';
+    const pool = TIPS[bucket] || TIPS.stuck;
+    if (moves > 12 && completedCount < 2) pool.push(...TIPS.overMove);
+    hintIdx[bucket] = (hintIdx[bucket] || 0) % pool.length;
+    return pool[hintIdx[bucket]++];
+  }
+
+  function showCoach() {
+    coachBox.style.display = 'block';
+    coachMsg.innerHTML = `<span class="coach-tag">AI COACH</span><br>${pickHint()}`;
+    if (coachStatus) coachStatus.textContent = 'Coach ready — ask for a hint below.';
+  }
+  if (coachBtn) {
+    coachBtn.addEventListener('click', showCoach);
+    coachBox.style.display = 'block';
+    if (coachMsg) coachMsg.innerHTML = `<span class="coach-tag">AI COACH</span><br>Hi! Pick a wire coil from the tray, then click its two terminals. Click me for a hint when you need one.`;
+  }
+
+  /* ---------- Assessment (persists to backend) ---------- */
+  async function reportProgress(progress, score) {
+    const projectId = new URLSearchParams(window.location.search).get('project');
+    const token = localStorage.getItem('skillscape-token');
+    if (!projectId || !token) return;
+    try {
+      const res = await fetch(`http://127.0.0.1:8084/projects/${projectId}/progress`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ progress, score }),
+      });
+      if (!res.ok) console.warn('progress report failed', res.status);
+    } catch (err) { console.warn('backend offline — progress not saved'); }
+  }
+
   document.getElementById('assessBtn').addEventListener('click', () => {
     const score = Math.max(0, 400 + completedCount * 50 - moves * 10);
     const grade = score >= 90 ? 'Excellent' : score >= 75 ? 'Proficient' : score >= 60 ? 'Competent' : 'Needs practice';
     localStorage.setItem('skillscape-sim', JSON.stringify({ score, grade, moves, completed: completedCount, time: new Date().toISOString() }));
+    reportProgress(100, score);
     window.location.href = `catalog.html?result=${encodeURIComponent(JSON.stringify({ score, grade, moves, completed: completedCount }))}`;
   });
 
