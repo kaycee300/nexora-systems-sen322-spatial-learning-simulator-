@@ -231,9 +231,6 @@ async function completeSignup(payload) {
   }
 }
 
-const googleSignupBtn = document.getElementById('google-signup');
-const googleSigninBtn = document.getElementById('google-signin');
-
 // Password visibility toggle functionality
 function setupPasswordToggle(toggleBtn) {
   const input = toggleBtn.closest('.password-input-wrapper').querySelector('input');
@@ -262,36 +259,6 @@ function setupPasswordToggle(toggleBtn) {
 // Initialize password toggles for all password fields
 const passwordToggles = document.querySelectorAll('.password-toggle');
 passwordToggles.forEach(setupPasswordToggle);
-
-if (googleSignupBtn) {
-  googleSignupBtn.addEventListener('click', async (event) => {
-    event.preventDefault();
-    hideStatus();
-    setLoadingButton(googleSignupBtn, true, 'Connecting...');
-    try {
-      await checkBackend();
-      window.location.href = `${BACKEND_URL}/auth/google/login`;
-    } catch (error) {
-      showStatus(error.message, 'error');
-      setLoadingButton(googleSignupBtn, false);
-    }
-  });
-}
-
-if (googleSigninBtn) {
-  googleSigninBtn.addEventListener('click', async (event) => {
-    event.preventDefault();
-    hideStatus();
-    setLoadingButton(googleSigninBtn, true, 'Connecting...');
-    try {
-      await checkBackend();
-      window.location.href = `${BACKEND_URL}/auth/google/login`;
-    } catch (error) {
-      showStatus(error.message, 'error');
-      setLoadingButton(googleSigninBtn, false);
-    }
-  });
-}
 
 if (emailInput && authType === 'signup') {
   emailInput.addEventListener('input', () => {

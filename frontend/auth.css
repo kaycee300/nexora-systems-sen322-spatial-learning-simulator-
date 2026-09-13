@@ -209,10 +209,6 @@ a:hover {
   margin-top: 22px;
 }
 
-.oauth-group {
-  margin-bottom: 18px;
-}
-
 .divider {
   display: flex;
   align-items: center;
@@ -405,13 +401,6 @@ body[data-auth="signin"] .auth-submit:hover {
   border-color: rgba(15, 118, 110, 0.2);
 }
 
-.btn-google {
-  width: 100%;
-  border-color: var(--line);
-  background: #fff;
-  color: #1f2937;
-}
-
 .btn[disabled],
 button[disabled] {
   cursor: not-allowed;
@@ -436,8 +425,7 @@ button[disabled] {
   animation: spin 0.8s linear infinite;
 }
 
-.btn.secondary.loading::after,
-.btn-google.loading::after {
+.btn.secondary.loading::after {
   border-color: rgba(15, 118, 110, 0.22);
   border-top-color: var(--accent);
 }

@@ -1,23 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.middleware.sessions import SessionMiddleware
 import os
 from sqlalchemy import inspect, text
 
 from .routers.auth_router import router as auth_router
-from .routers.oauth_router import router as oauth_router
 from .routers.projects import router as projects_router
 from .database import engine
 from . import models
-from . import settings
 
 
 app = FastAPI(title="SkillScape API", version="1.0.0")
-
-app.add_middleware(
-    SessionMiddleware,
-    secret_key=os.environ.get("SKILLSCAPE_SECRET", "change-me-for-local-dev"),
-)
 
 # CORS middleware - allow the frontend origin(s) for development
 app.add_middleware(
@@ -56,7 +48,6 @@ ensure_sqlite_columns()
 
 # Include routers
 app.include_router(auth_router)
-app.include_router(oauth_router)
 app.include_router(projects_router)
 
 
