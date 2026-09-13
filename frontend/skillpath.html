@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Skill Path — SkillScape</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="app.css" />
+  <style>
+    .path-hero { text-align: center; margin-bottom: 28px; }
+    .path-hero h1 { font-size: 1.9rem; }
+    .path-hero p { color: var(--text-muted); max-width: 620px; margin: 6px auto 0; }
+    .path-stage { height: 480px; position: relative; }
+    .path-legend { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin-top: 16px; }
+    .path-legend span { display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text-muted); }
+    .path-legend .sw { width: 14px; height: 14px; border-radius: 50%; }
+    .path-tip {
+      position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%);
+      background: rgba(15,23,42,0.92); color: #e2e8f0; padding: 12px 20px;
+      border-radius: 12px; font-size: 0.82rem; border: 1px solid rgba(94,234,212,0.3);
+      opacity: 0; pointer-events: none; transition: opacity 0.25s ease; white-space: nowrap;
+      box-shadow: 0 14px 30px rgba(0,0,0,0.4); z-index: 5;
+    }
+    .path-tip strong { color: #5eead4; }
+    .path-tip.show { opacity: 1; }
+    .path-roadmap { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 28px; }
+    .road { padding: 0 22px 22px; position: relative; }
+    .road h3 { display: flex; align-items: center; gap: 10px; font-size: 1rem; padding: 18px 0 6px; }
+    .road ul { list-style: none; }
+    .road li { position: relative; padding: 9px 0 9px 26px; font-size: 0.86rem; border-bottom: 1px dashed var(--border); }
+    .road li:last-child { border-bottom: none; }
+    .road li::before { content: ''; position: absolute; left: 6px; top: 50%; transform: translateY(-50%); width: 8px; height: 8px; border-radius: 50%; background: var(--border-strong); }
+    .road li.done::before { background: var(--primary); box-shadow: 0 0 0 3px rgba(15,118,110,0.2); }
+    .road li.done { color: var(--text-muted); text-decoration: line-through; }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-mark">SS</div>
+        <div class="brand-copy">
+          <strong>SkillScape</strong>
+          <span>Where practice meets simulation</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">Learn</div>
+        <a class="nav-link" href="dashboard.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+          Overview
+        </a>
+        <a class="nav-link" href="catalog.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          Courses
+        </a>
+        <a class="nav-link active" href="skillpath.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/><path d="M5 19h14"/></svg>
+          Skill Path
+        </a>
+        <div class="nav-section">Practice</div>
+        <a class="nav-link" href="simulation.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          Simulations
+        </a>
+        <a class="nav-link" href="dashboard.html#assessment">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Assessments
+        </a>
+        <div class="nav-section">Account</div>
+        <a class="nav-link" href="dashboard.html#achievements">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.48 12.52 17 22l-5-3-5 3 1.52-9.48"/></svg>
+          Achievements
+        </a>
+        <a class="nav-link" href="dashboard.html#settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="avatar" id="userAvatar">?</div>
+          <div class="user-meta">
+            <strong id="userName">Loading…</strong>
+            <span id="userEmail">—</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="main-area">
+      <header class="topbar">
+        <div style="display:flex;align-items:center;gap:12px">
+          <button class="icon-btn menu-toggle" id="menuToggle" aria-label="Toggle menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <span class="topbar-title">3D Skill Path</span>
+        </div>
+        <div class="topbar-actions">
+          <button class="icon-btn" id="notifBtn" aria-label="Notifications">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </button>
+          <button class="icon-btn" id="signout" aria-label="Sign out">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <main class="content">
+        <div class="path-hero">
+          <h1>Your 3D skill path</h1>
+          <p>Explore the interconnected skills you're building. Hover and drag the node network, click a cluster to jump to its roadmap below.</p>
+        </div>
+
+        <div class="canvas-stage path-stage" id="pathStage">
+          <canvas id="pathCanvas"></canvas>
+          <div class="path-tip" id="pathTip"></div>
+        </div>
+
+        <div class="path-legend">
+          <span><span class="sw" style="background:#f59e0b"></span>Electrical</span>
+          <span><span class="sw" style="background:#d97706"></span>Carpentry</span>
+          <span><span class="sw" style="background:#db2777"></span>Culinary</span>
+          <span><span class="sw" style="background:#6366f1"></span>AI</span>
+          <span><span class="sw" style="background:#0284c7"></span>Plumbing</span>
+          <span><span class="sw" style="background:#8b5cf6"></span>Robotics</span>
+        </div>
+
+        <div class="path-roadmap">
+          <div class="card road" id="road-electrical">
+            <h3>⚡ Electrical</h3>
+            <ul>
+              <li class="done">Multimeter Mastery</li>
+              <li class="done">Safety & Code Basics</li>
+              <li>Electrical Wiring Fundamentals</li>
+              <li>Circuit Breaker Panel</li>
+              <li>Home Automation Systems</li>
+            </ul>
+          </div>
+          <div class="card road" id="road-carpentry">
+            <h3>🪚 Carpentry</h3>
+            <ul>
+              <li class="done">Power Tool Safety</li>
+              <li>Cabinet Joinery Basics</li>
+              <li>Furniture Finishing</li>
+              <li>Custom Cabinetry</li>
+            </ul>
+          </div>
+          <div class="card road" id="road-ai">
+            <h3>🧠 AI & Planning</h3>
+            <ul>
+              <li class="done">Prompt Engineering</li>
+              <li>Intro to Machine Learning</li>
+              <li>AI Agents & Planning</li>
+              <li>Deployment & Ethics</li>
+            </ul>
+          </div>
+          <div class="card road" id="road-culinary">
+            <h3>👨‍🍳 Culinary</h3>
+            <ul>
+              <li>Knife Skills Lab</li>
+              <li>Baking Foundations</li>
+              <li>Bakery Oven Ops</li>
+              <li>Pastry & Chocolaterie</li>
+            </ul>
+          </div>
+          <div class="card road" id="road-plumbing">
+            <h3>🔧 Plumbing</h3>
+            <ul>
+              <li>Fixture Installation</li>
+              <li>Plumbing Pipefitting</li>
+              <li>Water Systems Design</li>
+            </ul>
+          </div>
+          <div class="card road" id="road-robotics">
+            <h3>🤖 Robotics</h3>
+            <ul>
+              <li>Embedded Control Basics</li>
+              <li>Robotics Assembly</li>
+              <li>Motion Planning</li>
+            </ul>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="skillpath.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
