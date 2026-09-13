@@ -60,7 +60,47 @@ body {
   color: var(--text);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  transition: background 0.25s ease, color 0.25s ease;
 }
+
+body[data-theme="dark"] {
+  --bg: #0f172a;
+  --bg-card: #1e293b;
+  --bg-sidebar: #020617;
+  --bg-sidebar-hover: #1e293b;
+  --text: #e2e8f0;
+  --text-muted: #94a3b8;
+  --text-inverse: #e2e8f0;
+  --border: #334155;
+  --border-strong: #475569;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+body[data-theme="dark"] .topbar {
+  background: rgba(15, 23, 42, 0.85);
+  border-color: var(--border);
+}
+
+body[data-theme="dark"] .icon-btn {
+  background: var(--bg-card);
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+
+body[data-theme="dark"] .search-input,
+body[data-theme="dark"] .cat-btn {
+  background: var(--bg-card);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+body[data-theme="dark"] .cat-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+body[data-theme="dark"] .streak-day { background: var(--bg-card); border-color: var(--border); }
+body[data-theme="dark"] .skill-chip { background: var(--bg-card); border-color: var(--border); color: var(--text); }
+body[data-theme="dark"] .road li { border-color: var(--border); }
 
 h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.25; }
 

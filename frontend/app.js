@@ -29,6 +29,24 @@ function showToast(message, type = 'info') {
   setTimeout(() => toast.remove(), 4000);
 }
 
+/* ---------- Theme toggle ---------- */
+(function theme() {
+  const saved = localStorage.getItem('skillscape-theme');
+  if (saved === 'dark') document.body.dataset.theme = 'dark';
+  const btn = document.getElementById('themeToggle');
+  if (btn) {
+    btn.addEventListener('click', () => {
+      const dark = document.body.dataset.theme !== 'dark';
+      document.body.dataset.theme = dark ? 'dark' : '';
+      localStorage.setItem('skillscape-theme', dark ? 'dark' : 'light');
+      const eye = btn.querySelector('svg');
+      if (eye) eye.innerHTML = dark
+        ? '<circle cx="12" cy="12" r="4"/><path d="M12 2h.01M12 22h.01M4.93 4.93h.01M19.07 19.07h.01M2 12h.01M22 12h.01M4.93 19.07h.01M19.07 4.93h.01"/>'
+        : '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+    });
+  }
+})();
+
 /* ---------- Auth guard ---------- */
 (function guard() {
   if (!getToken()) {
