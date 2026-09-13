@@ -277,6 +277,15 @@ button { font-family: var(--font-body); cursor: pointer; }
   border: 3px solid var(--primary);
 }
 
+.course-thumb .course-launch {
+  position: absolute; bottom: 10px; right: 10px;
+  background: rgba(15, 23, 42, 0.9); color: #5eead4;
+  border: 1px solid rgba(94, 234, 212, 0.4);
+  font-size: 0.72rem; font-weight: 700; padding: 6px 12px; border-radius: 999px;
+  transition: all 0.2s ease;
+}
+.course-card:hover .course-launch { background: var(--primary); color: #fff; border-color: var(--primary); }
+
 .course-body { padding: 18px; }
 .course-body h4 { font-size: 1.02rem; margin-bottom: 6px; }
 .course-body p { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px; }

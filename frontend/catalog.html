@@ -179,7 +179,7 @@
         <div class="course-card-inner">
           <div class="course-thumb ${c.grad}">
             <span class="course-level">${c.level}</span>
-            ${c.sim ? '<span class="course-progress-ring" title="Interactive 3D simulation">3D</span>' : ''}
+            ${c.sim ? '<span class="course-launch" title="Launch interactive simulation">▶ 3D</span>' : '<span class="course-progress-ring">Soon</span>'}
             <div class="course-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">${ICONS[c.icon]}</svg></div>
           </div>
           <div class="course-body">
@@ -216,6 +216,34 @@
       activeCat = btn.dataset.cat;
       render();
     }));
+
+    grid.addEventListener('click', (e) => {
+      const card = e.target.closest('.course-card');
+      if (!card) return;
+      const title = card.dataset.title;
+      const isSimCourse = COURSES.some((c) => c.title.toLowerCase() === title && c.sim);
+      if (isSimCourse) {
+        window.location.href = `simulation.html?course=${encodeURIComponent(title)}?from=catalog`;
+      }
+    });
+
+    // Handle assessment result from simulation
+    const params = new URLSearchParams(window.location.search);
+    const result = params.get('result');
+    if (result) {
+      try {
+        const r = JSON.parse(result);
+        const wrap = document.getElementById('toastWrap');
+        if (wrap) {
+          const toast = document.createElement('div');
+          toast.className = 'toast success';
+          toast.textContent = `Simulation complete — score ${r.score}, grade ${r.grade}.`;
+          wrap.appendChild(toast);
+          setTimeout(() => toast.remove(), 5000);
+        }
+        history.replaceState({}, '', 'catalog.html');
+      } catch (e) {}
+    }
 
     render();
   </script>
